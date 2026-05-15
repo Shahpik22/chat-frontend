@@ -42,6 +42,29 @@ export class AppComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
+  // loadMessages() {
+
+  //   this.chatService
+  //     .getMessages(this.lastMessageTime)
+  //     .subscribe((data: any[]) => {
+
+  //       if (data.length > 0) {
+
+  //         // append new messages only
+  //         this.messages.push(...data);
+
+  //         // save latest timestamp
+  //         this.lastMessageTime =
+  //           data[data.length - 1].createdAt;
+
+  //         setTimeout(() => {
+  //           this.scrollToBottom();
+  //         }, 100);
+  //       }
+
+  //     });
+  // }
+
   loadMessages() {
 
     this.chatService
@@ -50,10 +73,17 @@ export class AppComponent implements OnInit, OnDestroy {
 
         if (data.length > 0) {
 
-          // append new messages only
-          this.messages.push(...data);
+          data.forEach((msg: any) => {
 
-          // save latest timestamp
+            const exists = this.messages.some(
+              m => m._id === msg._id
+            );
+
+            if (!exists) {
+              this.messages.push(msg);
+            }
+          });
+
           this.lastMessageTime =
             data[data.length - 1].createdAt;
 
@@ -61,9 +91,27 @@ export class AppComponent implements OnInit, OnDestroy {
             this.scrollToBottom();
           }, 100);
         }
-
       });
   }
+
+  // sendMessage() {
+
+  //   if (!this.message.trim()) {
+  //     return;
+  //   }
+
+  //   const data = {
+  //     name: this.name,
+  //     message: this.message
+  //   };
+
+  //   this.chatService.sendMessage(data).subscribe(() => {
+
+  //     this.message = '';
+
+  //     this.loadMessages();
+  //   });
+  // }
 
   sendMessage() {
 
@@ -76,12 +124,15 @@ export class AppComponent implements OnInit, OnDestroy {
       message: this.message
     };
 
-    this.chatService.sendMessage(data).subscribe(() => {
+    // clear input immediately
+    this.message = '';
 
-      this.message = '';
-
-      this.loadMessages();
-    });
+    this.chatService.sendMessage(data)
+      .subscribe({
+        error: (err) => {
+          console.log(err);
+        }
+      });
   }
 
   scrollToBottom(): void {

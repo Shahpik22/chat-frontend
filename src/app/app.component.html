@@ -3,7 +3,7 @@
 <div class="app-container">
 
   <!-- LOGIN SCREEN -->
-  <div class="login-card" *ngIf="!joined">
+  <!-- <div class="login-card" *ngIf="!joined">
 
     <div class="logo">
       💬
@@ -24,6 +24,18 @@
 
     <button (click)="joinChat()">
       Join Chat
+    </button>
+
+  </div> -->
+
+  <div *ngIf="joined && !roomId">
+
+    <h3>Select user to chat</h3>
+
+    <input [(ngModel)]="chatUser" placeholder="Enter user name" />
+
+    <button (click)="createRoom()">
+      Start Chat
     </button>
 
   </div>
@@ -57,10 +69,7 @@
 
         <span class="online-title">Online:</span>
 
-        <span
-          class="online-user"
-          *ngFor="let user of onlineUsers"
-        >
+        <span class="online-user" *ngFor="let user of onlineUsers">
           {{ user }}
         </span>
 
@@ -71,22 +80,11 @@
     <!-- MESSAGES -->
     <div class="messages" #scrollMe>
 
-      <div
-        *ngFor="let msg of messages"
-        class="message-wrapper"
-        [class.me-wrapper]="msg.name === name"
-      >
+      <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
 
-        <div
-          class="message"
-          [class.me]="msg.name === name"
-          [class.other]="msg.name !== name"
-        >
+        <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
 
-          <div
-            class="sender"
-            *ngIf="msg.name !== name"
-          >
+          <div class="sender" *ngIf="msg.name !== name">
             {{ msg.name }}
           </div>
 
@@ -103,12 +101,7 @@
     <!-- INPUT -->
     <div class="input-area">
 
-      <input
-        type="text"
-        placeholder="Type a message"
-        [(ngModel)]="message"
-        (keyup.enter)="sendMessage()"
-      />
+      <input type="text" placeholder="Type a message" [(ngModel)]="message" (keyup.enter)="sendMessage()" />
 
       <button (click)="sendMessage()">
         ➤

@@ -22,17 +22,26 @@ export class ChatService {
   //   return this.http.get<any[]>(url);
   // }
 
-  getMessages(after?: string) {
-    let url = `${this.API}/messages`;
-    if (after && after !== '') {
-      url += `?after=${after}`;
-    }
-    return this.http.get<any[]>(url);
-  }
+  // getMessages(after?: string) {
+  //   let url = `${this.API}/messages`;
+  //   if (after && after !== '') {
+  //     url += `?after=${after}`;
+  //   }
+  //   return this.http.get<any[]>(url);
+  // }
 
+  getMessages(roomId: string) {
+  return this.http.get<any[]>(
+    `${this.API}/messages/${roomId}`
+  );
+}
+
+  // sendMessage(data: any) {
+  //   return this.http.post(`${this.API}/messages`, data);
+  // }
   sendMessage(data: any) {
-    return this.http.post(`${this.API}/messages`, data);
-  }
+  return this.http.post(`${this.API}/messages`, data);
+}
 
   getOnlineUsers() {
     return this.http.get<any[]>(`${this.API}/online-users`);

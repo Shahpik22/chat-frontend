@@ -19,6 +19,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @ViewChild('scrollMe') private myScrollContainer!: ElementRef;
 
+  roomId = '';
+  chatUser = '';
   name = '';
   message = '';
   joined = false;
@@ -45,18 +47,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
   joinChat() {
 
-  this.joined = true;
+    this.joined = true;
 
-  this.loadMessages();
-
-  this.startHeartbeat();
-  this.loadOnlineUsers();
-
-  setInterval(() => {
     this.loadMessages();
+
+    this.startHeartbeat();
     this.loadOnlineUsers();
-  }, 3000);
-}
+
+    setInterval(() => {
+      this.loadMessages();
+      this.loadOnlineUsers();
+    }, 3000);
+  }
 
   // loadMessages() {
 
@@ -81,35 +83,46 @@ export class AppComponent implements OnInit, OnDestroy {
   //     });
   // }
 
+  // loadMessages() {
+
+  //   this.chatService
+  //     .getMessages(this.lastMessageTime)
+  //     .subscribe((data: any[]) => {
+
+  //       if (data.length > 0) {
+
+  //         data.forEach((msg: any) => {
+
+  //           const exists = this.messages.some(
+  //             m => m._id === msg._id
+  //           );
+
+  //           if (!exists) {
+  //             this.messages.push(msg);
+  //           }
+  //         });
+
+  //         this.lastMessageTime =
+  //           data[data.length - 1].createdAt;
+
+  //         setTimeout(() => {
+  //           this.scrollToBottom();
+  //         }, 100);
+  //       }
+  //     });
+  // }
+
   loadMessages() {
 
     this.chatService
-      .getMessages(this.lastMessageTime)
+      .getMessages(this.roomId)
       .subscribe((data: any[]) => {
 
-        if (data.length > 0) {
+        this.messages = data;
 
-          data.forEach((msg: any) => {
-
-            const exists = this.messages.some(
-              m => m._id === msg._id
-            );
-
-            if (!exists) {
-              this.messages.push(msg);
-            }
-          });
-
-          this.lastMessageTime =
-            data[data.length - 1].createdAt;
-
-          setTimeout(() => {
-            this.scrollToBottom();
-          }, 100);
-        }
+        setTimeout(() => this.scrollToBottom(), 100);
       });
   }
-
   // sendMessage() {
 
   //   if (!this.message.trim()) {
@@ -129,28 +142,41 @@ export class AppComponent implements OnInit, OnDestroy {
   //   });
   // }
 
+  // sendMessage() {
+
+  //   if (!this.message.trim()) {
+  //     return;
+  //   }
+
+  //   const data = {
+  //     name: this.name,
+  //     message: this.message
+  //   };
+
+  //   // clear input immediately
+  //   this.message = '';
+
+  //   this.chatService.sendMessage(data)
+  //     .subscribe({
+  //       error: (err) => {
+  //         console.log(err);
+  //       }
+  //     });
+  // }
   sendMessage() {
 
-    if (!this.message.trim()) {
-      return;
-    }
-
     const data = {
+      roomId: this.roomId,
       name: this.name,
       message: this.message
     };
 
-    // clear input immediately
-    this.message = '';
-
     this.chatService.sendMessage(data)
-      .subscribe({
-        error: (err) => {
-          console.log(err);
-        }
+      .subscribe(() => {
+        this.message = '';
+        this.loadMessages();
       });
   }
-
   scrollToBottom(): void {
 
     try {
@@ -176,9 +202,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
   loadOnlineUsers() {
 
-  this.chatService.getOnlineUsers()
-    .subscribe((users: any) => {
-      this.onlineUsers = users;
-    });
-}
+    this.chatService.getOnlineUsers()
+      .subscribe((users: any) => {
+        this.onlineUsers = users;
+      });
+  }
+
+  createRoom() {
+
+    const users = [this.name, this.chatUser].sort();
+
+    this.roomId = users.join('_');
+  }
 }

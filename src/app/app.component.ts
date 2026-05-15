@@ -25,22 +25,38 @@ export class AppComponent implements OnInit, OnDestroy {
   messages: any[] = [];
   interval: any;
   lastMessageTime: string = '';
+  onlineUsers: string[] = [];
 
   constructor(private chatService: ChatService) { }
 
   ngOnInit(): void { }
 
+  // joinChat() {
+  //   if (!this.name.trim()) {
+  //     return;
+  //   }
+  //   this.joined = true;
+  //   this.loadMessages();
+  //   // Polling every 1 second
+  //   this.interval = setInterval(() => {
+  //     this.loadMessages();
+  //   }, 1000);
+  // }
+
   joinChat() {
-    if (!this.name.trim()) {
-      return;
-    }
-    this.joined = true;
+
+  this.joined = true;
+
+  this.loadMessages();
+
+  this.startHeartbeat();
+  this.loadOnlineUsers();
+
+  setInterval(() => {
     this.loadMessages();
-    // Polling every 1 second
-    this.interval = setInterval(() => {
-      this.loadMessages();
-    }, 1000);
-  }
+    this.loadOnlineUsers();
+  }, 3000);
+}
 
   // loadMessages() {
 
@@ -149,4 +165,20 @@ export class AppComponent implements OnInit, OnDestroy {
       clearInterval(this.interval);
     }
   }
+
+  startHeartbeat() {
+
+    setInterval(() => {
+      this.chatService.heartbeat(this.name)
+        .subscribe();
+    }, 5000); // every 5 seconds
+  }
+
+  loadOnlineUsers() {
+
+  this.chatService.getOnlineUsers()
+    .subscribe((users: any) => {
+      this.onlineUsers = users;
+    });
+}
 }

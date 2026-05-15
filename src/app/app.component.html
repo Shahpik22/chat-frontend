@@ -35,6 +35,7 @@
     <div class="chat-header">
 
       <div class="profile">
+
         <div class="avatar">
           {{ name.charAt(0).toUpperCase() }}
         </div>
@@ -45,9 +46,24 @@
           </div>
 
           <div class="status">
-            Online
+            🟢 Online
           </div>
         </div>
+
+      </div>
+
+      <!-- ONLINE USERS -->
+      <div class="online-users">
+
+        <span class="online-title">Online:</span>
+
+        <span
+          class="online-user"
+          *ngFor="let user of onlineUsers"
+        >
+          {{ user }}
+        </span>
+
       </div>
 
     </div>

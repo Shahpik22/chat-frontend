@@ -33,4 +33,12 @@ export class ChatService {
   sendMessage(data: any) {
     return this.http.post(`${this.API}/messages`, data);
   }
+
+  getOnlineUsers() {
+    return this.http.get<any[]>(`${this.API}/online-users`);
+  }
+
+  heartbeat(name: string) {
+    return this.http.post(`${this.API}/heartbeat`, { name });
+  }
 }

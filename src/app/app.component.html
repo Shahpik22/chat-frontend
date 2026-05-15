@@ -1,38 +1,27 @@
-<!-- src/app/app.component.html -->
-
 <div class="app-container">
 
-  <!-- LOGIN SCREEN -->
-  <!-- <div class="login-card" *ngIf="!joined">
+  <!-- LOGIN -->
+  <div class="login-card" *ngIf="!joined && !roomId">
 
-    <div class="logo">
-      💬
-    </div>
+    <div class="logo">💬</div>
 
     <h1>Chat App</h1>
 
-    <p class="subtitle">
-      Join the conversation
-    </p>
+    <p class="subtitle">Enter your name</p>
 
-    <input
-      type="text"
-      placeholder="Enter your name"
-      [(ngModel)]="name"
-      (keyup.enter)="joinChat()"
-    />
+    <input type="text" [(ngModel)]="name" placeholder="Your name" (keyup.enter)="joinChat()" />
 
     <button (click)="joinChat()">
-      Join Chat
+      Join
     </button>
 
-  </div> -->
+  </div>
 
-  <div *ngIf="joined && !roomId">
+  <div class="login-card" *ngIf="joined && !roomId">
 
-    <h3>Select user to chat</h3>
+    <h3>Start Private Chat</h3>
 
-    <input [(ngModel)]="chatUser" placeholder="Enter user name" />
+    <input type="text" [(ngModel)]="chatUser" placeholder="Enter user name" [disabled]="isDisabled" />
 
     <button (click)="createRoom()">
       Start Chat
@@ -40,72 +29,76 @@
 
   </div>
 
-  <!-- CHAT SCREEN -->
-  <div class="chat-container" *ngIf="joined">
+  <!-- CHAT -->
+  <div class="chat-container" *ngIf="joined && roomId">
 
     <!-- HEADER -->
     <div class="chat-header">
 
       <div class="profile">
-
         <div class="avatar">
-          {{ name.charAt(0).toUpperCase() }}
+          {{ chatUser.charAt(0).toUpperCase() }}
         </div>
 
         <div>
-          <div class="username">
-            {{ name }}
-          </div>
-
-          <div class="status">
-            🟢 Online
-          </div>
+          <div class="username">{{ chatUser }}</div>
+          <div class="status">{{status}}</div>
         </div>
-
-      </div>
-
-      <!-- ONLINE USERS -->
-      <div class="online-users">
-
-        <span class="online-title">Online:</span>
-
-        <span class="online-user" *ngFor="let user of onlineUsers">
-          {{ user }}
-        </span>
-
       </div>
 
     </div>
 
-    <!-- MESSAGES -->
-    <div class="messages" #scrollMe>
+    <!-- SELECT USER -->
+    <!-- <div class="login-card" *ngIf="!roomId">
 
-      <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
+      <h3 >Start Private Chat</h3>
 
-        <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
+      <input
+        type="text"
+        [(ngModel)]="chatUser"
+        placeholder="Enter user name"
+      />
 
-          <div class="sender" *ngIf="msg.name !== name">
-            {{ msg.name }}
-          </div>
-
-          <div class="text">
-            {{ msg.message }}
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- INPUT -->
-    <div class="input-area">
-
-      <input type="text" placeholder="Type a message" [(ngModel)]="message" (keyup.enter)="sendMessage()" />
-
-      <button (click)="sendMessage()">
-        ➤
+      <button (click)="createRoom()">
+        Start Chat
       </button>
+
+    </div> -->
+
+    <!-- CHAT AREA -->
+    <div class="chat-container" *ngIf="roomId">
+
+      <!-- MESSAGES -->
+      <div class="messages" #scrollMe>
+
+        <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
+
+          <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
+
+            <div class="sender" *ngIf="msg.name !== name">
+              {{ msg.name }}
+            </div>
+
+            <div class="text">
+              {{ msg.message }}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- INPUT -->
+      <div class="input-area">
+
+        <input type="text" [(ngModel)]="message" placeholder="Type message..." (keyup.enter)="sendMessage()" />
+
+        <button (click)="sendMessage()">
+          ➤
+        </button>
+
+      </div>
 
     </div>
 

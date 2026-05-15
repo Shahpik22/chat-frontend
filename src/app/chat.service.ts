@@ -43,11 +43,11 @@ export class ChatService {
   return this.http.post(`${this.API}/messages`, data);
 }
 
-  getOnlineUsers() {
-    return this.http.get<any[]>(`${this.API}/online-users`);
+  getOnlineUsers(data: any) {
+    return this.http.get<any[]>(`${this.API}/online-users/${data}`);
   }
 
   heartbeat(name: string) {
-    return this.http.post(`${this.API}/heartbeat`, { name });
+    return this.http.post(`${this.API}/heartbeat/${name}`,{});
   }
 }

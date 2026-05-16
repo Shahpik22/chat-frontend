@@ -44,7 +44,7 @@ export class AppComponent {
       this.isDisabled = false;
     }
 
-    this.startHeartbeat();
+    // this.startHeartbeat();
     this.loadOnlineUsers(this.name);
 
     setInterval(() => {

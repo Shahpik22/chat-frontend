@@ -17,32 +17,36 @@
 
   </div>
 
-  <div class="login-card" *ngIf="joined && !roomId">
+  <div class="login-card" *ngIf="joined && !roomCreated">
 
     <h3>Start Private Chat</h3>
 
-    <input type="text" [(ngModel)]="chatUser" placeholder="Enter user name" [disabled]="isDisabled" />
+    <input type="text" [(ngModel)]="roomId" placeholder="Enter 4 number" />
 
+    <button (click)="joinRoom()">
+      Join Room
+    </button>
+    <div style="padding: 10px;"></div>
     <button (click)="createRoom()">
-      Start Chat
+      Create Room
     </button>
 
   </div>
 
   <!-- CHAT -->
-  <div class="chat-container" *ngIf="joined && roomId">
+  <div class="chat-container" *ngIf="joined && roomCreated">
 
     <!-- HEADER -->
     <div class="chat-header">
 
       <div class="profile">
         <div class="avatar">
-          {{ chatUser.charAt(0).toUpperCase() }}
+          {{ name.charAt(0).toUpperCase() }}
         </div>
 
         <div>
-          <div class="username">{{ chatUser }}</div>
-          <div class="status">{{status}}</div>
+          <div class="username">{{ roomId }}</div>
+          <!-- <div class="status">{{status}}</div> -->
         </div>
       </div>
 

@@ -17,7 +17,7 @@ export class AppComponent {
   joined = false;
 
   // chat target user
-  chatUser = 'Syah';
+  // chatUser = 'Syah';
 
   // room system
   roomId = '';
@@ -32,6 +32,7 @@ export class AppComponent {
 
   isDisabled = true;
   status = 'Offline'
+  roomCreated = false;
   constructor(private chatService: ChatService) { }
 
   // ---------------- LOGIN ----------------
@@ -44,23 +45,27 @@ export class AppComponent {
     }
 
     this.startHeartbeat();
-    this.loadOnlineUsers(this.chatUser);
+    this.loadOnlineUsers(this.name);
 
     setInterval(() => {
       this.loadMessages();
-      this.loadOnlineUsers(this.chatUser);
+      this.loadOnlineUsers(this.name);
     }, 3000);
   }
 
   // ---------------- CREATE ROOM ----------------
   createRoom() {
 
-    if (!this.chatUser.trim()) return;
+    if (!this.name.trim()) return;
 
-    const users = [this.name, this.chatUser].sort();
+    // random 4 digit number
+    const randomId = Math.floor(1000 + Math.random() * 9000);
 
-    this.roomId = users.join('_');
+    // room id example: A_Syah_4821
+    this.roomId = randomId + '';
 
+    this.roomCreated = true;
+    
     this.loadMessages();
 
     // polling
@@ -69,6 +74,22 @@ export class AppComponent {
     }, 1500);
   }
 
+  // ---------------- JOIN ROOM ----------------
+  joinRoom() {
+
+    if (!this.name.trim()) return;
+
+    this.roomId = this.roomId
+
+    this.roomCreated = true;
+
+    this.loadMessages();
+
+    // polling
+    this.interval = setInterval(() => {
+      this.loadMessages();
+    }, 1500);
+  }
   // ---------------- LOAD MESSAGES ----------------
   loadMessages() {
 

@@ -132,9 +132,9 @@ export class AppComponent {
           this.lastMessageTime =
             data[data.length - 1].createdAt;
 
-          setTimeout(() => {
+          // setTimeout(() => {
             this.scrollToBottom();
-          }, 100);
+          // }, 100);
         }
       });
   }

@@ -147,60 +147,63 @@ export class AppComponent {
 
   loadMessages() {
 
-    if (!this.roomId) return;
+  if (!this.roomId) return;
 
-    // mark as read
-    this.chatService
-      .markAsRead(this.roomId, this.name)
-      .subscribe();
+  this.chatService
+    .markAsRead(this.roomId, this.name)
+    .subscribe();
 
-    this.chatService
-      .getMessages(this.roomId)
-      .subscribe((data: any[]) => {
+  this.chatService
+    .getMessages(this.roomId)
+    .subscribe((data: any[]) => {
 
-        let hasNewMessage = false;
+      let hasNewMessage = false;
 
-        data.forEach((msg: any) => {
+      data.forEach((msg: any) => {
 
-          const index = this.messages.findIndex(
-            m => m._id === msg._id
-          );
-
-          // update existing message
-          if (index !== -1) {
-
-            this.messages[index] = msg;
-
-          } else {
-
-            // add new message
-            this.messages.push(msg);
-
-            hasNewMessage = true;
-          }
-        });
-
-        // sort by timestamp
-        this.messages.sort((a, b) =>
-          new Date(a.createdAt).getTime() -
-          new Date(b.createdAt).getTime()
+        const existing = this.messages.find(
+          m => m._id === msg._id
         );
 
-        // scroll ONLY when new message arrives
-        if (hasNewMessage) {
+        // NEW MESSAGE
+        if (!existing) {
 
-          setTimeout(() => {
+          this.messages.push(msg);
 
-            if (this.isNearBottom()) {
+          hasNewMessage = true;
 
-              this.scrollToBottom();
-            }
+        } else {
 
-          }, 50);
+          // ONLY update if something changed
+          if (
+            existing.status !== msg.status ||
+            existing.read !== msg.read
+          ) {
+
+            existing.status = msg.status;
+            existing.read = msg.read;
+          }
         }
-
       });
-  }
+
+      // SORT
+      this.messages.sort((a, b) =>
+        new Date(a.createdAt).getTime() -
+        new Date(b.createdAt).getTime()
+      );
+
+      // SCROLL ONLY FOR NEW MESSAGE
+      if (hasNewMessage) {
+
+        setTimeout(() => {
+
+          this.scrollToBottom();
+
+        }, 50);
+      }
+
+    });
+}
 
   // ---------------- SEND MESSAGE ----------------
   sendMessage() {

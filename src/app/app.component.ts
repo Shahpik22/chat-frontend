@@ -111,50 +111,96 @@ export class AppComponent {
     }, 1500);
   }
   // ---------------- LOAD MESSAGES ----------------
+  // loadMessages() {
+
+  //   if (!this.roomId) return;
+
+  //   this.chatService
+  //     .markAsRead(this.roomId, this.name)
+  //     .subscribe();
+
+  //   this.chatService.getMessages(this.roomId)
+  //     .subscribe((data: any[]) => {
+
+  //       data.forEach((msg: any) => {
+
+  //         const exists = this.messages.some(
+  //           m => m._id === msg._id
+  //         );
+
+  //         if (!exists) {
+  //           this.messages.push(msg);
+  //         }
+  //       });
+
+  //       if (data.length > 0) {
+
+  //         this.lastMessageTime =
+  //           data[data.length - 1].createdAt;
+
+  //         // setTimeout(() => {
+  //         // this.scrollToBottom();
+  //         // }, 100);
+  //       }
+  //     });
+  // }
+
   loadMessages() {
 
     if (!this.roomId) return;
 
+    // mark as read
     this.chatService
       .markAsRead(this.roomId, this.name)
       .subscribe();
 
-    // this.chatService.getMessages(this.roomId)
-    //   .subscribe((data: any[]) => {
-
-    //     data.forEach((msg: any) => {
-
-    //       const exists = this.messages.some(
-    //         m => m._id === msg._id
-    //       );
-
-    //       if (!exists) {
-    //         this.messages.push(msg);
-    //       }
-    //     });
-
-    //     if (data.length > 0) {
-
-    //       this.lastMessageTime =
-    //         data[data.length - 1].createdAt;
-
-    //       // setTimeout(() => {
-    //       // this.scrollToBottom();
-    //       // }, 100);
-    //     }
-    //   });
-    this.chatService.getMessages(this.roomId)
+    this.chatService
+      .getMessages(this.roomId)
       .subscribe((data: any[]) => {
 
-        this.messages = data;
+        let hasNewMessage = false;
 
-        setTimeout(() => {
-          this.scrollToBottom();
-        }, 50);
+        data.forEach((msg: any) => {
+
+          const index = this.messages.findIndex(
+            m => m._id === msg._id
+          );
+
+          // update existing message
+          if (index !== -1) {
+
+            this.messages[index] = msg;
+
+          } else {
+
+            // add new message
+            this.messages.push(msg);
+
+            hasNewMessage = true;
+          }
+        });
+
+        // sort by timestamp
+        this.messages.sort((a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+        );
+
+        // scroll ONLY when new message arrives
+        if (hasNewMessage) {
+
+          setTimeout(() => {
+
+            if (this.isNearBottom()) {
+
+              this.scrollToBottom();
+            }
+
+          }, 50);
+        }
 
       });
   }
-
 
   // ---------------- SEND MESSAGE ----------------
   sendMessage() {

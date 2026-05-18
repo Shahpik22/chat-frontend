@@ -156,6 +156,7 @@ export class AppComponent {
       .subscribe(() => {
         this.message = '';
         this.loadMessages();
+        this.scrollToBottom();
       });
   }
 

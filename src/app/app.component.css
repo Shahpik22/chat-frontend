@@ -365,3 +365,42 @@ body {
   padding: 3px 8px;
   border-radius: 12px;
 }
+
+.time {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.7;
+  text-align: right;
+}
+
+.message.me .time {
+  color: rgba(255,255,255,0.8);
+}
+
+.message.other .time {
+  color: #777;
+}
+
+.meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+
+  margin-top: 4px;
+
+  font-size: 11px;
+}
+
+.time {
+  opacity: 0.7;
+}
+
+.tick {
+  color: gray;
+  font-size: 12px;
+}
+
+.tick.read {
+  color: #53bdeb;
+}

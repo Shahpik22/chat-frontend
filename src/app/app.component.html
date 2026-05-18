@@ -21,7 +21,8 @@
 
     <h3>Start Private Chat</h3>
 
-    <input type="text" [(ngModel)]="roomId" placeholder="Enter 4 number" />
+    <input type="text" [(ngModel)]="roomId" placeholder="Enter 4-digit number" maxlength="4" inputmode="numeric"
+      (input)="onRoomIdInput()" />
 
     <button (click)="joinRoom()">
       Join Room
@@ -86,6 +87,18 @@
             <div class="text">
               {{ msg.message }}
             </div>
+            <div class="meta">
+
+              <span class="time">
+                {{ msg.timestamp || msg.createdAt | date:'shortTime' }}
+              </span>
+
+              <span class="tick" *ngIf="msg.name === name" [class.read]="msg.read">
+
+                ✓✓
+
+              </span>
+            </div>
 
           </div>
 
@@ -93,19 +106,20 @@
 
       </div>
 
-      <!-- INPUT -->
-      <div class="input-area">
-
-        <input type="text" [(ngModel)]="message" placeholder="Type message..." (keyup.enter)="sendMessage()" />
-
-        <button (click)="sendMessage()">
-          ➤
-        </button>
-
-      </div>
-
     </div>
 
+
+    <!-- INPUT -->
+    <div class="input-area">
+
+      <input type="text" [(ngModel)]="message" placeholder="Type message..." (keyup.enter)="sendMessage()" />
+
+      <button (click)="sendMessage()">
+        ➤
+      </button>
+
+    </div>
+    <button (click)="logout()">Logout</button>
   </div>
 
 </div>

@@ -40,6 +40,9 @@ export class AppComponent {
     if (!this.name.trim()) return;
 
     this.joined = true;
+    // SAVE USER
+    localStorage.setItem('chat_name', this.name);
+
     if (this.name == 'Syah') {
       this.isDisabled = false;
     }
@@ -64,8 +67,11 @@ export class AppComponent {
     // room id example: A_Syah_4821
     this.roomId = randomId + '';
 
+    // SAVE ROOM
+    localStorage.setItem('chat_roomId', this.roomId);
+
     this.roomCreated = true;
-    
+
     this.loadMessages();
 
     // polling
@@ -79,9 +85,17 @@ export class AppComponent {
 
     if (!this.name.trim()) return;
 
+    if (!/^\d{4}$/.test(this.roomId)) {
+      alert('Room ID must be exactly 4 digits');
+      return;
+    }
+
     this.roomId = this.roomId
 
     this.roomCreated = true;
+
+    // SAVE ROOM
+    localStorage.setItem('chat_roomId', this.roomId);
 
     this.loadMessages();
 
@@ -94,6 +108,10 @@ export class AppComponent {
   loadMessages() {
 
     if (!this.roomId) return;
+
+    this.chatService
+      .markAsRead(this.roomId, this.name)
+      .subscribe();
 
     this.chatService.getMessages(this.roomId)
       .subscribe((data: any[]) => {
@@ -130,7 +148,8 @@ export class AppComponent {
     const data = {
       roomId: this.roomId,
       name: this.name,
-      message: this.message
+      message: this.message,
+      read: false
     };
 
     this.chatService.sendMessage(data)
@@ -189,4 +208,42 @@ export class AppComponent {
 
       });
   }
+
+
+  ngOnInit() {
+
+    const savedName = localStorage.getItem('chat_name');
+    const savedRoom = localStorage.getItem('chat_roomId');
+
+    if (savedName) {
+      this.name = savedName;
+      this.joined = true;
+    }
+
+    if (savedRoom) {
+      this.roomId = savedRoom;
+      this.roomCreated = true;
+
+      this.loadMessages();
+
+      this.interval = setInterval(() => {
+        this.loadMessages();
+      }, 1500);
+    }
+  }
+  logout() {
+    localStorage.removeItem('chat_name');
+    localStorage.removeItem('chat_roomId');
+
+    this.name = '';
+    this.roomId = '';
+    this.joined = false;
+    this.roomCreated = false;
+
+    clearInterval(this.interval);
+  }
+
+  onRoomIdInput() {
+  this.roomId = this.roomId.replace(/[^0-9]/g, '');
+}
 }

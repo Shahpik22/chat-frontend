@@ -50,4 +50,11 @@ export class ChatService {
   heartbeat(name: string) {
     return this.http.post(`${this.API}/heartbeat/${name}`,{});
   }
+
+  markAsRead(roomId: string, name: string) {
+  return this.http.put(
+    `${this.API}/messages/read/${roomId}/${name}`,
+    {}
+  );
+}
 }

@@ -404,3 +404,7 @@ body {
 .tick.read {
   color: #53bdeb;
 }
+
+.messages {
+  scroll-behavior: smooth;
+}

@@ -1,7 +1,13 @@
-import { Component } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService } from './chat.service';
+import {
+  Component,
+  ElementRef,
+  ViewChild
+} from '@angular/core';
+
 
 @Component({
   selector: 'app-root',
@@ -11,7 +17,7 @@ import { ChatService } from './chat.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-
+  @ViewChild('scrollMe') private scrollContainer!: ElementRef;
   // login user
   name = '';
   joined = false;
@@ -113,29 +119,39 @@ export class AppComponent {
       .markAsRead(this.roomId, this.name)
       .subscribe();
 
+    // this.chatService.getMessages(this.roomId)
+    //   .subscribe((data: any[]) => {
+
+    //     data.forEach((msg: any) => {
+
+    //       const exists = this.messages.some(
+    //         m => m._id === msg._id
+    //       );
+
+    //       if (!exists) {
+    //         this.messages.push(msg);
+    //       }
+    //     });
+
+    //     if (data.length > 0) {
+
+    //       this.lastMessageTime =
+    //         data[data.length - 1].createdAt;
+
+    //       // setTimeout(() => {
+    //       // this.scrollToBottom();
+    //       // }, 100);
+    //     }
+    //   });
     this.chatService.getMessages(this.roomId)
       .subscribe((data: any[]) => {
 
-        data.forEach((msg: any) => {
+        this.messages = data;
 
-          const exists = this.messages.some(
-            m => m._id === msg._id
-          );
+        setTimeout(() => {
+          this.scrollToBottom();
+        }, 50);
 
-          if (!exists) {
-            this.messages.push(msg);
-          }
-        });
-
-        if (data.length > 0) {
-
-          this.lastMessageTime =
-            data[data.length - 1].createdAt;
-
-          // setTimeout(() => {
-            // this.scrollToBottom();
-          // }, 100);
-        }
       });
   }
 
@@ -161,14 +177,14 @@ export class AppComponent {
   }
 
   // ---------------- SCROLL ----------------
-  scrollToBottom() {
-    try {
-      const el = document.querySelector('.messages');
-      if (el) {
-        el.scrollTop = el.scrollHeight;
-      }
-    } catch { }
-  }
+  // scrollToBottom() {
+  //   try {
+  //     const el = document.querySelector('.messages');
+  //     if (el) {
+  //       el.scrollTop = el.scrollHeight;
+  //     }
+  //   } catch { }
+  // }
 
   startHeartbeat() {
 
@@ -245,6 +261,42 @@ export class AppComponent {
   }
 
   onRoomIdInput() {
-  this.roomId = this.roomId.replace(/[^0-9]/g, '');
-}
+    this.roomId = this.roomId.replace(/[^0-9]/g, '');
+  }
+
+  // ---------------- AUTO SCROLL ----------------
+  scrollToBottom(): void {
+
+    try {
+
+      this.scrollContainer.nativeElement.scrollTo({
+
+        top:
+          this.scrollContainer.nativeElement.scrollHeight,
+
+        behavior: 'smooth'
+      });
+
+    } catch (err) { }
+  }
+
+  // ---------------- CHECK IF USER NEAR BOTTOM ----------------
+  isNearBottom(): boolean {
+
+    try {
+
+      const el = this.scrollContainer.nativeElement;
+
+      return (
+        el.scrollHeight -
+        el.scrollTop -
+        el.clientHeight
+        < 150
+      );
+
+    } catch {
+
+      return true;
+    }
+  }
 }

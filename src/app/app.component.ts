@@ -133,7 +133,7 @@ export class AppComponent {
             data[data.length - 1].createdAt;
 
           // setTimeout(() => {
-            this.scrollToBottom();
+            // this.scrollToBottom();
           // }, 100);
         }
       });

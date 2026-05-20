@@ -213,7 +213,7 @@ export class AppComponent {
             hasNewMessage = true;
 
             // 🔔 trigger notification
-            this.showNotification(msg);
+            // this.showNotification(msg);
 
             // // 🔔 in-tab notification
             // this.notifyInTab(msg);

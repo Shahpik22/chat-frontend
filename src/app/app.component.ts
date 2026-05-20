@@ -46,26 +46,52 @@ export class AppComponent {
   showImageDialog = false;
   selectedDialogImage: string = '';
   selectedDialogMsg: any = null;
+
   constructor(private chatService: ChatService) { }
 
   // ---------------- LOGIN ----------------
+  // joinChat() {
+  //   if (!this.name.trim()) return;
+
+  //   this.joined = true;
+  //   // SAVE USER
+  //   localStorage.setItem('chat_name', this.name);
+
+  //   if (this.name == 'Syah') {
+  //     this.isDisabled = false;
+  //   }
+
+  //   // this.startHeartbeat();
+  //   this.loadOnlineUsers(this.name);
+
+  //   setInterval(() => {
+  //     this.loadMessages();
+  //     this.loadOnlineUsers(this.name);
+  //   }, 3000);
+  // }
   joinChat() {
+
     if (!this.name.trim()) return;
 
     this.joined = true;
-    // SAVE USER
+
     localStorage.setItem('chat_name', this.name);
 
-    if (this.name == 'Syah') {
-      this.isDisabled = false;
-    }
+    // 🔔 request browser notification permission
+    // if ('Notification' in window) {
 
-    // this.startHeartbeat();
-    this.loadOnlineUsers(this.name);
+    //   Notification.requestPermission().then(permission => {
+    //     console.log('Notification permission:', permission);
+    //   });
+
+    // }
+    // 🔔 MUST run on user action (click)
+    Notification.requestPermission().then(p => {
+      console.log('Permission:', p);
+    });
 
     setInterval(() => {
       this.loadMessages();
-      this.loadOnlineUsers(this.name);
     }, 3000);
   }
 
@@ -178,6 +204,9 @@ export class AppComponent {
             this.messages.push(msg);
 
             hasNewMessage = true;
+
+            // 🔔 trigger notification
+            this.showNotification(msg);
 
           } else {
             existing.image = msg.image;
@@ -458,24 +487,39 @@ export class AppComponent {
   // }
   openViewOnce(msg: any) {
 
-  if (msg.viewedBy?.includes(this.name)) return;
+    if (msg.viewedBy?.includes(this.name)) return;
 
-  this.selectedDialogImage = msg.image;
-  this.selectedDialogMsg = msg;
-  this.showImageDialog = true;
+    this.selectedDialogImage = msg.image;
+    this.selectedDialogMsg = msg;
+    this.showImageDialog = true;
 
-  // mark as viewed
-  this.chatService
-    .markViewOnce(msg._id, this.name)
-    .subscribe(() => {
+    // mark as viewed
+    this.chatService
+      .markViewOnce(msg._id, this.name)
+      .subscribe(() => {
 
-      if (!msg.viewedBy) msg.viewedBy = [];
-      msg.viewedBy.push(this.name);
+        if (!msg.viewedBy) msg.viewedBy = [];
+        msg.viewedBy.push(this.name);
+      });
+  }
+  closeDialog() {
+    this.showImageDialog = false;
+    this.selectedDialogImage = '';
+    this.selectedDialogMsg = null;
+  }
+
+  showNotification(msg: any) {
+
+    if (Notification.permission !== 'granted') return;
+
+    // don't notify own messages
+    if (msg.name === this.name) return;
+
+    new Notification(`💬 ${msg.name}`, {
+
+      body: msg.message || 'Sent an image',
+
+      icon: 'assets/chat-icon.png' // optional
     });
-}
-closeDialog() {
-  this.showImageDialog = false;
-  this.selectedDialogImage = '';
-  this.selectedDialogMsg = null;
-}
+  }
 }

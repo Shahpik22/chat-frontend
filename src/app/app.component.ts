@@ -47,6 +47,13 @@ export class AppComponent {
   selectedDialogImage: string = '';
   selectedDialogMsg: any = null;
 
+  showInAppNotif = false;
+  notifText = '';
+
+  originalTitle = document.title;
+  blinkInterval: any;
+  blinkToggle = false;
+  unreadCount = 0;
   constructor(private chatService: ChatService) { }
 
   // ---------------- LOGIN ----------------
@@ -205,8 +212,19 @@ export class AppComponent {
 
             hasNewMessage = true;
 
-            // 🔔 trigger notification
-            this.showNotification(msg);
+            // // 🔔 trigger notification
+            // this.showNotification(msg);
+
+            // // 🔔 in-tab notification
+            // this.notifyInTab(msg);
+
+            // 🔥 increase unread counter
+            if (msg.name !== this.name) {
+              this.unreadCount++;
+            }
+
+            // start blinking
+            this.startTabBlink();
 
           } else {
             existing.image = msg.image;
@@ -388,6 +406,10 @@ export class AppComponent {
         this.loadMessages();
       }, 1500);
     }
+
+    window.addEventListener('focus', () => {
+      this.stopTabBlink();
+    });
   }
   logout() {
     localStorage.removeItem('chat_name');
@@ -521,5 +543,49 @@ export class AppComponent {
 
       icon: 'assets/chat-icon.png' // optional
     });
+  }
+
+  notifyInTab(msg: any) {
+
+    if (msg.name === this.name) return;
+
+    this.notifText =
+      `${msg.name}: ${msg.message || 'Sent an image'}`;
+
+    this.showInAppNotif = true;
+
+    // auto hide after 3s
+    setTimeout(() => {
+      this.showInAppNotif = false;
+    }, 3000);
+  }
+
+  startTabBlink() {
+
+    // prevent multiple intervals
+    if (this.blinkInterval) return;
+
+    this.blinkInterval = setInterval(() => {
+
+      if (!document.hidden) return;
+
+      this.blinkToggle = !this.blinkToggle;
+
+      document.title = this.blinkToggle
+        // ? `🔴 New Message (${this.unreadCount})`
+        // : `💬 Chat App (${this.unreadCount})`;
+        ? `🔴 New Message`
+        : `💬 Chat App`;
+
+    }, 1000);
+  }
+
+  stopTabBlink() {
+
+    clearInterval(this.blinkInterval);
+    this.blinkInterval = null;
+
+    this.unreadCount = 0;
+    document.title = this.originalTitle;
   }
 }

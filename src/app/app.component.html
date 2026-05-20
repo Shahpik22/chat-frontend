@@ -1,4 +1,8 @@
 <div class="app-container">
+  <!-- IN-TAB NOTIFICATION -->
+  <div class="inapp-notif" *ngIf="showInAppNotif">
+    {{ notifText }}
+  </div>
 
   <!-- LOGIN -->
   <div class="login-card" *ngIf="!joined && !roomId">

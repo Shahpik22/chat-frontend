@@ -311,29 +311,93 @@ export class AppComponent {
       });
   }
 
-  onImageSelected(event: any) {
+  // onImageSelected(event: any) {
 
-    const file = event.target.files[0];
+  //   const file = event.target.files[0];
 
-    if (!file) return;
+  //   if (!file) return;
 
-    // only image
-    if (!file.type.startsWith('image/')) {
-      alert('Please select image only');
-      return;
-    }
+  //   // only image
+  //   if (!file.type.startsWith('image/')) {
+  //     alert('Please select image only');
+  //     return;
+  //   }
 
-    const reader = new FileReader();
+  //   const reader = new FileReader();
 
-    reader.onload = () => {
+  //   reader.onload = () => {
 
-      this.selectedImage = reader.result as string;
+  //     this.selectedImage = reader.result as string;
 
-      this.previewImage = this.selectedImage;
+  //     this.previewImage = this.selectedImage;
+  //   };
+
+  //   reader.readAsDataURL(file);
+  // }
+
+  
+onImageSelected(event: any) {
+
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (e: any) => {
+
+    const img = new Image();
+
+    img.src = e.target.result;
+
+    img.onload = () => {
+
+      // create canvas
+      const canvas = document.createElement('canvas');
+
+      // resize
+      const MAX_WIDTH = 600;
+      const scale =
+        MAX_WIDTH / img.width;
+
+      canvas.width = MAX_WIDTH;
+      canvas.height =
+        img.height * scale;
+
+      const ctx =
+        canvas.getContext('2d');
+
+      if (!ctx) return;
+
+      // draw resized image
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      // compress image
+      const compressed =
+        canvas.toDataURL(
+          'image/jpeg',
+          0.5 // quality 0-1
+        );
+
+      // save
+      this.selectedImage = compressed;
+      this.previewImage = compressed;
+
+      console.log(
+        'Compressed size:',
+        compressed.length
+      );
     };
+  };
 
-    reader.readAsDataURL(file);
-  }
+  reader.readAsDataURL(file);
+}
 
   // ---------------- SCROLL ----------------
   // scrollToBottom() {
@@ -420,6 +484,7 @@ export class AppComponent {
     this.joined = false;
     this.roomCreated = false;
     this.messages.length = 0;
+    this.messages = [];
 
     clearInterval(this.interval);
   }

@@ -67,9 +67,7 @@
           <!-- VIEW ONCE -->
           <div *ngIf="msg.image && msg.viewOnce">
 
-            <div class="viewed-box" *ngIf="msg.viewedBy?.includes(name)">
-              🔒 Photo expired
-            </div>
+
 
             <!-- <img *ngIf="!msg.viewedBy?.includes(name)" [src]="msg.image" class="chat-image"
               (click)="openViewOnce(msg)" /> -->
@@ -78,6 +76,9 @@
             <img [src]="msg.image" class="chat-image" (click)="openViewOnce(msg)"
               *ngIf="!msg.viewedBy?.includes(name) || msg.name === name" />
 
+          </div>
+          <div class="viewed-box" *ngIf="!msg.image && !msg.message">
+            🔒 Photo expired
           </div>
 
           <!-- META -->

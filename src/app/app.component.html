@@ -1,9 +1,13 @@
 <div class="app-container">
 
   <!-- LOGIN -->
-  <div class="login-card" *ngIf="!joined">
+  <div class="login-card" *ngIf="!joined && !roomId">
 
-    <h1>💬 Chat App</h1>
+    <div class="logo">💬</div>
+
+    <h1>Chat App</h1>
+
+    <p class="subtitle">Enter your name</p>
 
     <input type="text" [(ngModel)]="name" placeholder="Enter name" (keyup.enter)="joinChat()" />
 
@@ -26,6 +30,21 @@
   <!-- CHAT -->
   <div class="chat-container" *ngIf="joined && roomCreated">
 
+    <!-- HEADER -->
+    <div class="chat-header">
+
+      <div class="profile">
+        <div class="avatar">
+          {{ name.charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+          <div class="username">{{ roomId }}</div>
+          <!-- <div class="status">{{status}}</div> -->
+        </div>
+      </div>
+
+    </div>
     <!-- MESSAGES -->
     <div class="messages" #scrollMe>
 

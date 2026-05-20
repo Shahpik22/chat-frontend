@@ -147,63 +147,63 @@ export class AppComponent {
 
   loadMessages() {
 
-  if (!this.roomId) return;
+    if (!this.roomId) return;
 
-  this.chatService
-    .markAsRead(this.roomId, this.name)
-    .subscribe();
+    this.chatService
+      .markAsRead(this.roomId, this.name)
+      .subscribe();
 
-  this.chatService
-    .getMessages(this.roomId)
-    .subscribe((data: any[]) => {
+    this.chatService
+      .getMessages(this.roomId)
+      .subscribe((data: any[]) => {
 
-      let hasNewMessage = false;
+        let hasNewMessage = false;
 
-      data.forEach((msg: any) => {
+        data.forEach((msg: any) => {
 
-        const existing = this.messages.find(
-          m => m._id === msg._id
+          const existing = this.messages.find(
+            m => m._id === msg._id
+          );
+
+          // NEW MESSAGE
+          if (!existing) {
+
+            this.messages.push(msg);
+
+            hasNewMessage = true;
+
+          } else {
+
+            // ONLY update if something changed
+            if (
+              existing.status !== msg.status ||
+              existing.read !== msg.read
+            ) {
+
+              existing.status = msg.status;
+              existing.read = msg.read;
+            }
+          }
+        });
+
+        // SORT
+        this.messages.sort((a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
         );
 
-        // NEW MESSAGE
-        if (!existing) {
+        // SCROLL ONLY FOR NEW MESSAGE
+        if (hasNewMessage) {
 
-          this.messages.push(msg);
+          setTimeout(() => {
 
-          hasNewMessage = true;
+            this.scrollToBottom();
 
-        } else {
-
-          // ONLY update if something changed
-          if (
-            existing.status !== msg.status ||
-            existing.read !== msg.read
-          ) {
-
-            existing.status = msg.status;
-            existing.read = msg.read;
-          }
+          }, 50);
         }
+
       });
-
-      // SORT
-      this.messages.sort((a, b) =>
-        new Date(a.createdAt).getTime() -
-        new Date(b.createdAt).getTime()
-      );
-
-      // SCROLL ONLY FOR NEW MESSAGE
-      if (hasNewMessage) {
-
-        setTimeout(() => {
-
-          this.scrollToBottom();
-
-        }, 50);
-      }
-
-    });
-}
+  }
 
   // ---------------- SEND MESSAGE ----------------
   sendMessage() {
@@ -305,6 +305,7 @@ export class AppComponent {
     this.roomId = '';
     this.joined = false;
     this.roomCreated = false;
+    this.messages.length = 0;
 
     clearInterval(this.interval);
   }

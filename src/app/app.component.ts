@@ -473,6 +473,8 @@ onImageSelected(event: any) {
 
     window.addEventListener('focus', () => {
       this.stopTabBlink();
+      //Update last online
+      this.chatService.heartbeat(this.name);
     });
   }
   logout() {

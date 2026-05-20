@@ -151,39 +151,6 @@ export class AppComponent {
     }, 1500);
   }
   // ---------------- LOAD MESSAGES ----------------
-  // loadMessages() {
-
-  //   if (!this.roomId) return;
-
-  //   this.chatService
-  //     .markAsRead(this.roomId, this.name)
-  //     .subscribe();
-
-  //   this.chatService.getMessages(this.roomId)
-  //     .subscribe((data: any[]) => {
-
-  //       data.forEach((msg: any) => {
-
-  //         const exists = this.messages.some(
-  //           m => m._id === msg._id
-  //         );
-
-  //         if (!exists) {
-  //           this.messages.push(msg);
-  //         }
-  //       });
-
-  //       if (data.length > 0) {
-
-  //         this.lastMessageTime =
-  //           data[data.length - 1].createdAt;
-
-  //         // setTimeout(() => {
-  //         // this.scrollToBottom();
-  //         // }, 100);
-  //       }
-  //     });
-  // }
 
   loadMessages() {
 
@@ -207,9 +174,9 @@ export class AppComponent {
 
           // NEW MESSAGE
           if (!existing) {
-
+            
+            // this.messages = [];
             this.messages.push(msg);
-
             hasNewMessage = true;
 
             // 🔔 trigger notification
@@ -335,69 +302,69 @@ export class AppComponent {
   //   reader.readAsDataURL(file);
   // }
 
-  
-onImageSelected(event: any) {
 
-  const file = event.target.files[0];
+  onImageSelected(event: any) {
 
-  if (!file) return;
+    const file = event.target.files[0];
 
-  const reader = new FileReader();
+    if (!file) return;
 
-  reader.onload = (e: any) => {
+    const reader = new FileReader();
 
-    const img = new Image();
+    reader.onload = (e: any) => {
 
-    img.src = e.target.result;
+      const img = new Image();
 
-    img.onload = () => {
+      img.src = e.target.result;
 
-      // create canvas
-      const canvas = document.createElement('canvas');
+      img.onload = () => {
 
-      // resize
-      const MAX_WIDTH = 600;
-      const scale =
-        MAX_WIDTH / img.width;
+        // create canvas
+        const canvas = document.createElement('canvas');
 
-      canvas.width = MAX_WIDTH;
-      canvas.height =
-        img.height * scale;
+        // resize
+        const MAX_WIDTH = 600;
+        const scale =
+          MAX_WIDTH / img.width;
 
-      const ctx =
-        canvas.getContext('2d');
+        canvas.width = MAX_WIDTH;
+        canvas.height =
+          img.height * scale;
 
-      if (!ctx) return;
+        const ctx =
+          canvas.getContext('2d');
 
-      // draw resized image
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
+        if (!ctx) return;
 
-      // compress image
-      const compressed =
-        canvas.toDataURL(
-          'image/jpeg',
-          0.5 // quality 0-1
+        // draw resized image
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          canvas.width,
+          canvas.height
         );
 
-      // save
-      this.selectedImage = compressed;
-      this.previewImage = compressed;
+        // compress image
+        const compressed =
+          canvas.toDataURL(
+            'image/jpeg',
+            0.5 // quality 0-1
+          );
 
-      console.log(
-        'Compressed size:',
-        compressed.length
-      );
+        // save
+        this.selectedImage = compressed;
+        this.previewImage = compressed;
+
+        console.log(
+          'Compressed size:',
+          compressed.length
+        );
+      };
     };
-  };
 
-  reader.readAsDataURL(file);
-}
+    reader.readAsDataURL(file);
+  }
 
   // ---------------- SCROLL ----------------
   // scrollToBottom() {

@@ -77,8 +77,13 @@
               (click)="openViewOnce(msg)" /> -->
 
             <!-- ALWAYS RENDER IMAGE (CLICKABLE LOGIC HANDLED IN TS) -->
-            <img [src]="msg.image" class="chat-image" (click)="openViewOnce(msg)"
-              *ngIf="!msg.viewedBy?.includes(name) || msg.name === name" />
+            <!-- <img [src]="" class="chat-image" (click)="openViewOnce(msg)"
+              *ngIf="!msg.viewedBy?.includes(name) || msg.name === name" /> -->
+
+            <div class="view-once-box" *ngIf="!msg.viewedBy?.includes(name) || msg.name === name"
+              (click)="openViewOnce(msg)">
+              👁 View Once Photo
+            </div>
 
           </div>
           <div class="viewed-box" *ngIf="!msg.image && !msg.message">

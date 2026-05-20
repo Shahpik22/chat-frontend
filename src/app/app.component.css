@@ -576,3 +576,25 @@ body {
     opacity: 1;
   }
 }
+
+.view-once-box {
+
+  width: 220px;
+  height: 260px;
+
+  background: #222;
+
+  color: white;
+
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+
+  font-weight: bold;
+
+  user-select: none;
+}

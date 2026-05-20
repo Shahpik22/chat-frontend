@@ -212,8 +212,8 @@ export class AppComponent {
 
             hasNewMessage = true;
 
-            // // 🔔 trigger notification
-            // this.showNotification(msg);
+            // 🔔 trigger notification
+            this.showNotification(msg);
 
             // // 🔔 in-tab notification
             // this.notifyInTab(msg);
@@ -221,6 +221,7 @@ export class AppComponent {
             // 🔥 increase unread counter
             if (msg.name !== this.name) {
               this.unreadCount++;
+              console.log('masuk sini')
             }
 
             // start blinking

@@ -219,10 +219,9 @@ export class AppComponent {
             // this.notifyInTab(msg);
 
             // 🔥 increase unread counter
-            if (msg.name !== this.name) {
-              this.unreadCount++;
-              console.log('masuk sini')
-            }
+            // if (msg.name !== this.name) {
+            //   this.unreadCount++;
+            // }
 
             // start blinking
             this.startTabBlink();

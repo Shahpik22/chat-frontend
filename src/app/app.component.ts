@@ -39,6 +39,13 @@ export class AppComponent {
   isDisabled = true;
   status = 'Offline'
   roomCreated = false;
+  selectedImage: string = '';
+  previewImage: string = '';
+  isViewOnce = false;
+
+  showImageDialog = false;
+  selectedDialogImage: string = '';
+  selectedDialogMsg: any = null;
   constructor(private chatService: ChatService) { }
 
   // ---------------- LOGIN ----------------
@@ -173,7 +180,7 @@ export class AppComponent {
             hasNewMessage = true;
 
           } else {
-
+            existing.image = msg.image;
             // ONLY update if something changed
             if (
               existing.status !== msg.status ||
@@ -206,23 +213,79 @@ export class AppComponent {
   }
 
   // ---------------- SEND MESSAGE ----------------
+  // sendMessage() {
+
+  //   if (!this.message.trim()) return;
+
+  //   const data = {
+  //     roomId: this.roomId,
+  //     name: this.name,
+  //     message: this.message,
+  //     read: false
+  //   };
+
+  //   this.chatService.sendMessage(data)
+  //     .subscribe(() => {
+  //       this.message = '';
+  //       this.loadMessages();
+  //       this.scrollToBottom();
+  //     });
+  // }
+
   sendMessage() {
 
-    if (!this.message.trim()) return;
+    if (
+      !this.message.trim() &&
+      !this.selectedImage
+    ) return;
 
     const data = {
       roomId: this.roomId,
       name: this.name,
       message: this.message,
+      image: this.selectedImage,
+      // IMAGE ALWAYS VIEW ONCE
+      viewOnce:
+        this.selectedImage ? true : false,
+
+      viewedBy: [],
       read: false
     };
 
     this.chatService.sendMessage(data)
       .subscribe(() => {
+
         this.message = '';
+
+        this.selectedImage = '';
+        this.previewImage = '';
         this.loadMessages();
         this.scrollToBottom();
       });
+  }
+
+  onImageSelected(event: any) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    // only image
+    if (!file.type.startsWith('image/')) {
+      alert('Please select image only');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+
+      this.selectedImage = reader.result as string;
+
+      this.previewImage = this.selectedImage;
+    };
+
+    reader.readAsDataURL(file);
   }
 
   // ---------------- SCROLL ----------------
@@ -349,4 +412,70 @@ export class AppComponent {
       return true;
     }
   }
+
+  removeSelectedImage() {
+
+    this.selectedImage = '';
+    this.previewImage = '';
+  }
+
+  // openViewOnce(msg: any) {
+
+  //   console.log('CLICKED IMAGE', msg);
+
+  //   if (!msg?.image) {
+  //     console.log('NO IMAGE FOUND');
+  //     return;
+  //   }
+
+  //   if (msg.viewedBy?.includes(this.name)) {
+  //     console.log('ALREADY VIEWED');
+  //     return;
+  //   }
+
+  //   // OPEN IMAGE FIRST (IMPORTANT)
+  //   const win = window.open();
+
+  //   if (win) {
+  //     win.document.write(`
+  //     <img src="${msg.image}" style="width:100%" />
+  //   `);
+  //   } else {
+  //     alert('Popup blocked');
+  //   }
+
+  //   // THEN MARK VIEWED
+  //   this.chatService
+  //     .markViewOnce(msg._id, this.name)
+  //     .subscribe(() => {
+
+  //       if (!msg.viewedBy) msg.viewedBy = [];
+
+  //       msg.viewedBy.push(this.name);
+
+  //       console.log('MARKED AS VIEWED');
+  //     });
+  // }
+  openViewOnce(msg: any) {
+
+  if (msg.viewedBy?.includes(this.name)) return;
+
+  this.selectedDialogImage = msg.image;
+  this.selectedDialogMsg = msg;
+  this.showImageDialog = true;
+
+  // mark as viewed
+  this.chatService
+    .markViewOnce(msg._id, this.name)
+    .subscribe(() => {
+
+      if (!msg.viewedBy) msg.viewedBy = [];
+      msg.viewedBy.push(this.name);
+    });
+}
+closeDialog() {
+  this.showImageDialog = false;
+  this.selectedDialogImage = '';
+  this.selectedDialogMsg = null;
+}
 }

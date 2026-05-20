@@ -31,30 +31,41 @@ export class ChatService {
   // }
 
   getMessages(roomId: string) {
-  return this.http.get<any[]>(
-    `${this.API}/messages/${roomId}`
-  );
-}
+    return this.http.get<any[]>(
+      `${this.API}/messages/${roomId}`
+    );
+  }
 
   // sendMessage(data: any) {
   //   return this.http.post(`${this.API}/messages`, data);
   // }
   sendMessage(data: any) {
-  return this.http.post(`${this.API}/messages`, data);
-}
+    return this.http.post(`${this.API}/messages`, data);
+  }
 
   getOnlineUsers(data: any) {
     return this.http.get<any[]>(`${this.API}/online-users/${data}`);
   }
 
   heartbeat(name: string) {
-    return this.http.post(`${this.API}/heartbeat/${name}`,{});
+    return this.http.post(`${this.API}/heartbeat/${name}`, {});
   }
 
   markAsRead(roomId: string, name: string) {
-  return this.http.put(
-    `${this.API}/messages/read/${roomId}/${name}`,
-    {}
-  );
-}
+    return this.http.put(
+      `${this.API}/messages/read/${roomId}/${name}`,
+      {}
+    );
+  }
+
+  // ---------------- VIEW ONCE ----------------
+  markViewOnce(messageId: string, user: string) {
+    return this.http.post(
+      `${this.API}/messages/view-once`,
+      {
+        messageId,
+        user
+      }
+    );
+  }
 }

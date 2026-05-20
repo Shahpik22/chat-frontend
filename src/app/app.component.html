@@ -1,104 +1,76 @@
 <div class="app-container">
 
   <!-- LOGIN -->
-  <div class="login-card" *ngIf="!joined && !roomId">
+  <div class="login-card" *ngIf="!joined">
 
-    <div class="logo">💬</div>
+    <h1>💬 Chat App</h1>
 
-    <h1>Chat App</h1>
+    <input type="text" [(ngModel)]="name" placeholder="Enter name" (keyup.enter)="joinChat()" />
 
-    <p class="subtitle">Enter your name</p>
-
-    <input type="text" [(ngModel)]="name" placeholder="Your name" (keyup.enter)="joinChat()" />
-
-    <button (click)="joinChat()">
-      Join
-    </button>
+    <button (click)="joinChat()">Join</button>
 
   </div>
 
+  <!-- ROOM -->
   <div class="login-card" *ngIf="joined && !roomCreated">
 
-    <h3>Start Private Chat</h3>
+    <h3>Room</h3>
 
-    <input type="text" [(ngModel)]="roomId" placeholder="Enter 4-digit number" maxlength="4" inputmode="numeric"
-      (input)="onRoomIdInput()" />
+    <input type="text" [(ngModel)]="roomId" placeholder="4-digit room" maxlength="4" (input)="onRoomIdInput()" />
 
-    <button (click)="joinRoom()">
-      Join Room
-    </button>
-    <div style="padding: 10px;"></div>
-    <button (click)="createRoom()">
-      Create Room
-    </button>
+    <button (click)="joinRoom()">Join</button>
+    <button (click)="createRoom()">Create</button>
 
   </div>
 
   <!-- CHAT -->
   <div class="chat-container" *ngIf="joined && roomCreated">
 
-    <!-- HEADER -->
-    <div class="chat-header">
+    <!-- MESSAGES -->
+    <div class="messages" #scrollMe>
 
-      <div class="profile">
-        <div class="avatar">
-          {{ name.charAt(0).toUpperCase() }}
-        </div>
+      <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
 
-        <div>
-          <div class="username">{{ roomId }}</div>
-          <!-- <div class="status">{{status}}</div> -->
-        </div>
-      </div>
+        <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
 
-    </div>
+          <div *ngIf="msg.name !== name" class="sender">
+            {{ msg.name }}
+          </div>
 
-    <!-- SELECT USER -->
-    <!-- <div class="login-card" *ngIf="!roomId">
+          <!-- TEXT -->
+          <div class="text" *ngIf="msg.message">
+            {{ msg.message }}
+          </div>
 
-      <h3 >Start Private Chat</h3>
+          <!-- IMAGE -->
+          <img *ngIf="msg.image && !msg.viewOnce" [src]="msg.image" class="chat-image" />
 
-      <input
-        type="text"
-        [(ngModel)]="chatUser"
-        placeholder="Enter user name"
-      />
+          <!-- VIEW ONCE -->
+          <div *ngIf="msg.image && msg.viewOnce">
 
-      <button (click)="createRoom()">
-        Start Chat
-      </button>
-
-    </div> -->
-
-    <!-- CHAT AREA -->
-    <div class="chat-container" *ngIf="roomId">
-
-      <!-- MESSAGES -->
-      <div class="messages" #scrollMe>
-
-        <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
-
-          <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
-
-            <div class="sender" *ngIf="msg.name !== name">
-              {{ msg.name }}
+            <div class="viewed-box" *ngIf="msg.viewedBy?.includes(name)">
+              🔒 Photo expired
             </div>
 
-            <div class="text">
-              {{ msg.message }}
-            </div>
-            <div class="meta">
+            <!-- <img *ngIf="!msg.viewedBy?.includes(name)" [src]="msg.image" class="chat-image"
+              (click)="openViewOnce(msg)" /> -->
 
-              <span class="time">
-                {{ msg.timestamp || msg.createdAt | date:'shortTime' }}
-              </span>
+            <!-- ALWAYS RENDER IMAGE (CLICKABLE LOGIC HANDLED IN TS) -->
+            <img [src]="msg.image" class="chat-image" (click)="openViewOnce(msg)"
+              *ngIf="!msg.viewedBy?.includes(name) || msg.name === name" />
 
-              <span class="tick" *ngIf="msg.name === name" [class.read]="msg.read">
+          </div>
 
-                ✓✓
+          <!-- META -->
+          <div class="meta">
 
-              </span>
-            </div>
+            <span class="time">
+              {{ msg.createdAt | date:'shortTime' }}
+            </span>
+
+            <span class="tick" *ngIf="msg.name === name" [class.read]="msg.read">
+              ✓✓
+            </span>
 
           </div>
 
@@ -108,18 +80,54 @@
 
     </div>
 
+    <!-- IMAGE PREVIEW -->
+    <div class="image-preview-box" *ngIf="previewImage">
+
+      <img [src]="previewImage" class="preview-image" />
+
+      <button class="remove-preview" (click)="removeSelectedImage()">
+        ✕
+      </button>
+
+      <div class="preview-badge">
+        👁 View Once
+      </div>
+
+    </div>
 
     <!-- INPUT -->
     <div class="input-area">
 
       <input type="text" [(ngModel)]="message" placeholder="Type message..." (keyup.enter)="sendMessage()" />
 
-      <button (click)="sendMessage()">
-        ➤
-      </button>
+      <label class="image-btn">
+        📷
+        <input type="file" hidden accept="image/*" (change)="onImageSelected($event)" />
+      </label>
+
+      <button (click)="sendMessage()">➤</button>
 
     </div>
+
     <button (click)="logout()">Logout</button>
+
+  </div>
+
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="img-modal" *ngIf="showImageDialog">
+
+  <div class="img-backdrop" (click)="closeDialog()"></div>
+
+  <div class="img-content">
+
+    <button class="close-btn" (click)="closeDialog()">
+      ✕
+    </button>
+
+    <img [src]="selectedDialogImage" />
+
   </div>
 
 </div>

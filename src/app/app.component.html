@@ -27,6 +27,7 @@
     <input type="text" [(ngModel)]="roomId" placeholder="4-digit room" maxlength="4" (input)="onRoomIdInput()" />
 
     <button (click)="joinRoom()">Join</button>
+    <div style="padding: 5px;"></div>
     <button (click)="createRoom()">Create</button>
 
   </div>
@@ -37,15 +38,25 @@
     <!-- HEADER -->
     <div class="chat-header">
 
-      <div class="profile">
-        <div class="avatar">
-          {{ name.charAt(0).toUpperCase() }}
-        </div>
 
-        <div>
-          <div class="username">{{ roomId }}</div>
+      <div class="profile">
+        <label class="back-btn">
+          ↩
+          <input hidden (click)="back()" />
+        </label>
+        <!-- <div class="avatar">
+          {{ name.charAt(0).toUpperCase() }}
+        </div> -->
+
+        <div class="center-header">
+          <div class="username clickable" (click)="scrollToBottom()">{{ roomId }}
+          </div>
           <!-- <div class="status">{{status}}</div> -->
         </div>
+        <label class="back-btn">
+          ❌
+          <input hidden (click)="logout()" />
+        </label>
       </div>
 
     </div>
@@ -130,7 +141,7 @@
       <input type="text" [(ngModel)]="message" placeholder="Type message..." (keyup.enter)="sendMessage()" />
 
       <label class="image-btn">
-        📷
+        🖼️
         <input type="file" hidden accept="image/*" (change)="onImageSelected($event)" />
       </label>
 
@@ -138,7 +149,7 @@
 
     </div>
 
-    <button (click)="logout()">Logout</button>
+    <!-- <button (click)="logout()">Logout</button> -->
 
   </div>
 

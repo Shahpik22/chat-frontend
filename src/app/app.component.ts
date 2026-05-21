@@ -104,6 +104,7 @@ export class AppComponent {
 
   // ---------------- CREATE ROOM ----------------
   createRoom() {
+    this.messages = [];
 
     if (!this.name.trim()) return;
 
@@ -128,6 +129,7 @@ export class AppComponent {
 
   // ---------------- JOIN ROOM ----------------
   joinRoom() {
+    this.messages = [];
 
     if (!this.name.trim()) return;
 
@@ -174,7 +176,7 @@ export class AppComponent {
 
           // NEW MESSAGE
           if (!existing) {
-            
+            console.log(existing);
             // this.messages = [];
             this.messages.push(msg);
             hasNewMessage = true;
@@ -191,11 +193,11 @@ export class AppComponent {
             // }
 
             // start blinking
-             if (msg.name !== this.name) {
-            //   this.unreadCount++;
-            this.startTabBlink();
+            if (msg.name !== this.name) {
+              //   this.unreadCount++;
+              this.startTabBlink();
             }
-            
+
 
           } else {
             existing.image = msg.image;
@@ -426,6 +428,7 @@ export class AppComponent {
     window.addEventListener('focus', () => {
       this.stopTabBlink();
       //Update last online
+      console.log("go here");
       this.chatService.heartbeat(this.name);
     });
   }
@@ -606,5 +609,12 @@ export class AppComponent {
 
     this.unreadCount = 0;
     document.title = this.originalTitle;
+  }
+
+  back() {
+    this.roomCreated = false;
+    this.roomId = '';
+    this.messages.length = 0;
+    this.messages = [];
   }
 }

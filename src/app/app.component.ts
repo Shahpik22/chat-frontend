@@ -191,7 +191,11 @@ export class AppComponent {
             // }
 
             // start blinking
+             if (msg.name !== this.name) {
+            //   this.unreadCount++;
             this.startTabBlink();
+            }
+            
 
           } else {
             existing.image = msg.image;
@@ -227,25 +231,6 @@ export class AppComponent {
   }
 
   // ---------------- SEND MESSAGE ----------------
-  // sendMessage() {
-
-  //   if (!this.message.trim()) return;
-
-  //   const data = {
-  //     roomId: this.roomId,
-  //     name: this.name,
-  //     message: this.message,
-  //     read: false
-  //   };
-
-  //   this.chatService.sendMessage(data)
-  //     .subscribe(() => {
-  //       this.message = '';
-  //       this.loadMessages();
-  //       this.scrollToBottom();
-  //     });
-  // }
-
   sendMessage() {
 
     if (

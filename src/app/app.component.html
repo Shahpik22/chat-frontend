@@ -63,7 +63,7 @@
     <!-- MESSAGES -->
     <div class="messages" #scrollMe>
 
-      <div *ngFor="let msg of messages" class="message-wrapper" [class.me-wrapper]="msg.name === name">
+      <div *ngFor="let msg of messages; trackBy: trackByMessage" class="message-wrapper" [class.me-wrapper]="msg.name === name">
 
         <div class="message" [class.me]="msg.name === name" [class.other]="msg.name !== name">
 

@@ -170,15 +170,31 @@ export class AppComponent {
 
         data.forEach((msg: any) => {
 
+          // const existing = this.messages.find(
+          //   m => m._id === msg._id
+          // );
+
           const existing = this.messages.find(
-            m => m._id === msg._id
+            m =>
+              m._id === msg._id ||
+              (
+                m.tempId &&
+                m.message === msg.message &&
+                m.name === msg.name
+              )
           );
 
           // NEW MESSAGE
           if (!existing) {
             console.log(existing);
             // this.messages = [];
-            this.messages.push(msg);
+            // this.messages.push(msg);
+            this.messages = [...this.messages, msg]
+              .sort((a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+              );
+
             hasNewMessage = true;
 
             // 🔔 trigger notification
@@ -214,10 +230,10 @@ export class AppComponent {
         });
 
         // SORT
-        this.messages.sort((a, b) =>
-          new Date(a.createdAt).getTime() -
-          new Date(b.createdAt).getTime()
-        );
+        // this.messages.sort((a, b) =>
+        //   new Date(a.createdAt).getTime() -
+        //   new Date(b.createdAt).getTime()
+        // );
 
         // SCROLL ONLY FOR NEW MESSAGE
         if (hasNewMessage) {
@@ -240,30 +256,93 @@ export class AppComponent {
       !this.selectedImage
     ) return;
 
+    // temporary local id
+    const tempId = 'tmp_' + Date.now();
+
     const data = {
+      tempId,
       roomId: this.roomId,
       name: this.name,
       message: this.message,
       image: this.selectedImage,
-      // IMAGE ALWAYS VIEW ONCE
-      viewOnce:
-        this.selectedImage ? true : false,
-
+      viewOnce: this.selectedImage ? true : false,
       viewedBy: [],
-      read: false
+      read: false,
+      createdAt: new Date()
     };
 
+    // add instantly to UI
+    this.scrollToBottom();
+    this.messages.push(data);
+    this.message = '';
+    
+
     this.chatService.sendMessage(data)
-      .subscribe(() => {
+      .subscribe((savedMsg: any) => {
 
-        this.message = '';
+        // replace temp message with real backend message
+        const index = this.messages.findIndex(
+          m => m.tempId === tempId
+        );
 
+        // if (index !== -1) {
+        //   this.messages[index] = savedMsg;
+        // }
+
+        // if (index !== -1) {
+
+          const originalCreatedAt =
+            this.messages[index].createdAt;
+
+          Object.assign(this.messages[index], savedMsg);
+
+          // preserve original timestamp
+          this.messages[index].createdAt =
+            originalCreatedAt;
+
+          // Object.assign(this.messages[index], savedMsg);
+
+        // }
+
+ this.scrollToBottom();
         this.selectedImage = '';
         this.previewImage = '';
-        this.loadMessages();
-        this.scrollToBottom();
+
       });
   }
+  // sendMessage() {
+
+  //   if (
+  //     !this.message.trim() &&
+  //     !this.selectedImage
+  //   ) return;
+
+  //   const data = {
+  //     roomId: this.roomId,
+  //     name: this.name,
+  //     message: this.message,
+  //     image: this.selectedImage,
+  //     // IMAGE ALWAYS VIEW ONCE
+  //     viewOnce:
+  //       this.selectedImage ? true : false,
+
+  //     viewedBy: [],
+  //     read: false
+  //   };
+
+  //   this.messages.push(data);
+
+  //   this.chatService.sendMessage(data)
+  //     .subscribe(() => {
+
+  //       this.message = '';
+
+  //       this.selectedImage = '';
+  //       this.previewImage = '';
+  //       // this.loadMessages();
+  //       this.scrollToBottom();
+  //     });
+  // }
 
   // onImageSelected(event: any) {
 
@@ -611,10 +690,17 @@ export class AppComponent {
     document.title = this.originalTitle;
   }
 
+  trackByMessage(index: number, msg: any): string {
+
+    return msg._id || msg.tempId;
+
+  }
   back() {
     this.roomCreated = false;
     this.roomId = '';
     this.messages.length = 0;
     this.messages = [];
   }
+
+
 }

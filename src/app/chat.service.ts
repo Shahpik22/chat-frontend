@@ -9,9 +9,9 @@ import { HttpClient } from '@angular/common/http';
 export class ChatService {
 
   // CHANGE THIS TO YOUR BACKEND URL
-  // private API = 'http://localhost:3000';
+  private API = 'http://localhost:3000';
   // private API = 'https://chat-backend-phi-three.vercel.app';
-  private API = 'https://chat-backend-k8kz.onrender.com';
+  // private API = 'https://chat-backend-k8kz.onrender.com';
 
   constructor(private http: HttpClient) { }
 

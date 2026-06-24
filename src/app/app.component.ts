@@ -1,14 +1,15 @@
-
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChatService } from './chat.service';
 import {
   Component,
   ElementRef,
+  NgZone,
   ViewChild
 } from '@angular/core';
 
-
+import { ChatService } from './chat.service';
+import { SocketService } from './socket.service';
+import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -17,238 +18,473 @@ import {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  @ViewChild('scrollMe') private scrollContainer!: ElementRef;
-  // login user
+
+  @ViewChild('scrollMe')
+  private scrollContainer!: ElementRef;
+
+  // login
   name = '';
   joined = false;
 
-  // chat target user
-  // chatUser = 'Syah';
-
-  // room system
+  // room
   roomId = '';
+  roomCreated = false;
 
-  // chat
+  // message
   message = '';
   messages: any[] = [];
 
-  interval: any;
-  lastMessageTime: string = '';
-  onlineUsers: string[] = [];
+  // status
+  status = 'Offline';
 
-  isDisabled = true;
-  status = 'Offline'
-  roomCreated = false;
-  selectedImage: string = '';
-  previewImage: string = '';
-  isViewOnce = false;
+  // image
+  selectedImage = '';
+  previewImage = '';
 
+  // dialog
   showImageDialog = false;
-  selectedDialogImage: string = '';
+  selectedDialogImage = '';
   selectedDialogMsg: any = null;
 
+  // notification
   showInAppNotif = false;
   notifText = '';
 
+  // tab blinking
   originalTitle = document.title;
   blinkInterval: any;
   blinkToggle = false;
   unreadCount = 0;
-  constructor(private chatService: ChatService) { }
 
-  // ---------------- LOGIN ----------------
-  // joinChat() {
-  //   if (!this.name.trim()) return;
+  constructor(
+    private chatService: ChatService,
+    public socketService: SocketService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) { }
 
-  //   this.joined = true;
-  //   // SAVE USER
-  //   localStorage.setItem('chat_name', this.name);
+  /* =========================
+     INIT
+  ========================= */
 
-  //   if (this.name == 'Syah') {
-  //     this.isDisabled = false;
-  //   }
+  ngOnInit() {
 
-  //   // this.startHeartbeat();
-  //   this.loadOnlineUsers(this.name);
+    const savedName =
+      localStorage.getItem('chat_name');
 
-  //   setInterval(() => {
-  //     this.loadMessages();
-  //     this.loadOnlineUsers(this.name);
-  //   }, 3000);
-  // }
+    const savedRoom =
+      localStorage.getItem('chat_roomId');
+
+    if (savedName) {
+
+      this.name = savedName;
+      this.joined = true;
+    }
+
+    if (savedRoom) {
+
+      this.roomId = savedRoom;
+      this.roomCreated = true;
+
+      this.loadMessages();
+
+      this.joinSocketRoom();
+    }
+
+    window.addEventListener('focus', () => {
+
+      this.stopTabBlink();
+
+      this.socketService.heartbeat(this.name);
+    });
+  }
+
+  /* =========================
+     LOGIN
+  ========================= */
+
   joinChat() {
 
     if (!this.name.trim()) return;
 
     this.joined = true;
 
-    localStorage.setItem('chat_name', this.name);
+    localStorage.setItem(
+      'chat_name',
+      this.name
+    );
 
-    // 🔔 request browser notification permission
-    // if ('Notification' in window) {
+    Notification
+      .requestPermission()
+      .then(permission => {
 
-    //   Notification.requestPermission().then(permission => {
-    //     console.log('Notification permission:', permission);
-    //   });
+        console.log(permission);
+      });
 
-    // }
-    // 🔔 MUST run on user action (click)
-    Notification.requestPermission().then(p => {
-      console.log('Permission:', p);
-    });
-
-    setInterval(() => {
-      this.loadMessages();
-    }, 3000);
+    this.startHeartbeat();
   }
 
-  // ---------------- CREATE ROOM ----------------
+  /* =========================
+     CREATE ROOM
+  ========================= */
+
   createRoom() {
+
     this.messages = [];
 
     if (!this.name.trim()) return;
 
-    // random 4 digit number
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    const randomId =
+      Math.floor(1000 + Math.random() * 9000);
 
-    // room id example: A_Syah_4821
-    this.roomId = randomId + '';
+    this.roomId = randomId.toString();
 
-    // SAVE ROOM
-    localStorage.setItem('chat_roomId', this.roomId);
+    localStorage.setItem(
+      'chat_roomId',
+      this.roomId
+    );
 
     this.roomCreated = true;
 
     this.loadMessages();
 
-    // polling
-    this.interval = setInterval(() => {
-      this.loadMessages();
-    }, 1500);
+    this.joinSocketRoom();
   }
 
-  // ---------------- JOIN ROOM ----------------
+  /* =========================
+     JOIN ROOM
+  ========================= */
+
   joinRoom() {
+
     this.messages = [];
 
     if (!this.name.trim()) return;
 
     if (!/^\d{4}$/.test(this.roomId)) {
+
       alert('Room ID must be exactly 4 digits');
+
       return;
     }
 
-    this.roomId = this.roomId
+    localStorage.setItem(
+      'chat_roomId',
+      this.roomId
+    );
 
     this.roomCreated = true;
 
-    // SAVE ROOM
-    localStorage.setItem('chat_roomId', this.roomId);
-
     this.loadMessages();
 
-    // polling
-    this.interval = setInterval(() => {
-      this.loadMessages();
-    }, 1500);
+    this.joinSocketRoom();
   }
-  // ---------------- LOAD MESSAGES ----------------
+
+  /* =========================
+     SOCKET ROOM
+  ========================= */
+
+  joinSocketRoom() {
+
+    this.socketService.joinRoom(this.roomId);
+
+    /* =========================
+       NEW MESSAGE
+    ========================= */
+
+    // this.socketService.onMessage((msg: any) => {
+
+    //   const existing =
+    //     this.messages.find(
+    //       m =>
+    //         m._id === msg._id ||
+    //         (
+    //           m.tempId &&
+    //           m.tempId === msg.tempId
+    //         )
+    //     );
+
+    //   if (existing) return;
+
+    //   this.messages = [
+    //     ...this.messages,
+    //     msg
+    //   ].sort((a, b) =>
+    //     new Date(a.createdAt).getTime() -
+    //     new Date(b.createdAt).getTime()
+    //   );
+
+    //   // notification
+    //   if (msg.name !== this.name) {
+
+    //     this.startTabBlink();
+
+    //     this.showNotification(msg);
+
+    //     this.notifyInTab(msg);
+    //   }
+
+    //   setTimeout(() => {
+
+    //     this.scrollToBottom();
+
+    //   }, 50);
+    // });
+
+    // this.socketService.onMessage((msg: any) => {
+
+    //   /* =========================
+    //      FIND TEMP MESSAGE
+    //   ========================= */
+
+    //   const tempIndex =
+    //     this.messages.findIndex(
+    //       m =>
+    //         m.tempId &&
+    //         m.tempId === msg.tempId
+    //     );
+
+    //   /* =========================
+    //      REPLACE TEMP MESSAGE
+    //   ========================= */
+
+    //   if (tempIndex !== -1) {
+
+    //     this.messages[tempIndex] = {
+
+    //       ...msg
+    //     };
+
+    //     return;
+    //   }
+
+    //   /* =========================
+    //      PREVENT DUPLICATE
+    //   ========================= */
+
+    //   const existing =
+    //     this.messages.find(
+    //       m => m._id === msg._id
+    //     );
+
+    //   if (existing) return;
+
+    //   /* =========================
+    //      ADD NEW MESSAGE
+    //   ========================= */
+
+    //   this.messages = [
+    //     ...this.messages,
+    //     msg
+    //   ].sort((a, b) =>
+    //     new Date(a.createdAt).getTime() -
+    //     new Date(b.createdAt).getTime()
+    //   );
+
+    //   /* =========================
+    //      NOTIFICATION
+    //   ========================= */
+
+    //   if (msg.name !== this.name) {
+
+    //     this.startTabBlink();
+
+    //     this.showNotification(msg);
+
+    //     this.notifyInTab(msg);
+    //   }
+
+    //   setTimeout(() => {
+
+    //     this.scrollToBottom();
+
+    //   }, 50);
+    // });
+
+    this.socketService.onMessage((msg: any) => {
+
+      const tempIndex =
+        this.messages.findIndex(
+          m =>
+            m.tempId &&
+            m.tempId === msg.tempId
+        );
+
+      if (tempIndex !== -1) {
+
+        this.messages[tempIndex] = {
+          ...msg
+        };
+
+        return;
+      }
+
+      const existing =
+        this.messages.find(
+          m => m._id === msg._id
+        );
+
+      if (existing) return;
+
+      this.messages = [
+        ...this.messages,
+        msg
+      ];
+
+      // 🔥 SEND READ RECEIPT LIVE
+      if (msg.name !== this.name) {
+
+        this.socketService.readMessage(
+          this.roomId,
+          this.name
+        );
+      }
+
+      setTimeout(() => {
+        this.scrollToBottom();
+      }, 50);
+    });
+
+    /* =========================
+       READ RECEIPT
+    ========================= */
+
+    // this.socketService.socket.on(
+    //   'messages-read',
+    //   () => {
+
+    //     this.messages.forEach(msg => {
+    //       console.log("message " + msg.name);
+
+    //       if (msg.name !== this.name) {
+
+    //         msg.read = true;
+    //       }
+    //     });
+    //     console.log("this.message : " + JSON.stringify(this.messages));
+    //   }
+    // );
+
+    // this.socketService.socket.on(
+    //   'messages-read',
+    //   () => {
+
+    //     this.ngZone.run(() => {
+    //       this.messages = this.messages.map(msg => {
+
+    //         if (msg.name === this.name) {
+
+    //           return {
+    //             ...msg,
+    //             read: true
+    //           };
+    //         }
+
+    //         return msg;
+    //       });
+    //     });
+    //     // this.cdr.detectChanges(); // 🔥 FORCE UI UPDATE
+    //     console.log("this.messages  " + this.messages);
+    //   }
+    // );
+
+    this.socketService.socket.on(
+      'messages-read',
+      () => {
+
+        this.ngZone.run(() => {
+
+          this.messages = this.messages.map(msg => {
+
+            if (msg.name === this.name) {
+
+              return {
+                ...msg,
+                read: true
+              };
+            }
+
+            return msg;
+          });
+
+        });
+
+      }
+    );
+
+    /* =========================
+       VIEW ONCE UPDATE
+    ========================= */
+
+    this.socketService.socket.on(
+      'view-once-updated',
+      (data: any) => {
+
+        const msg =
+          this.messages.find(
+            m => m._id === data.messageId
+          );
+
+        if (msg) {
+
+          msg.image = null;
+
+          msg.expired = true;
+        }
+      }
+    );
+
+    /* =========================
+       ONLINE STATUS
+    ========================= */
+
+    this.socketService.socket.on(
+      'user-online',
+      (data: any) => {
+
+        if (data.name !== this.name) {
+
+          this.status =
+            data.status
+              ? 'Online'
+              : 'Offline';
+        }
+      }
+    );
+  }
+
+  /* =========================
+     LOAD OLD MESSAGES
+  ========================= */
 
   loadMessages() {
 
     if (!this.roomId) return;
 
     this.chatService
-      .markAsRead(this.roomId, this.name)
-      .subscribe();
-
-    this.chatService
       .getMessages(this.roomId)
       .subscribe((data: any[]) => {
 
-        let hasNewMessage = false;
+        this.messages = data;
 
-        data.forEach((msg: any) => {
+        setTimeout(() => {
+          this.cdr.detectChanges();
 
-          // const existing = this.messages.find(
-          //   m => m._id === msg._id
-          // );
+          this.scrollToBottom();
 
-          const existing = this.messages.find(
-            m =>
-              m._id === msg._id ||
-              (
-                m.tempId &&
-                m.message === msg.message &&
-                m.name === msg.name
-              )
-          );
-
-          // NEW MESSAGE
-          if (!existing) {
-            console.log(existing);
-            // this.messages = [];
-            // this.messages.push(msg);
-            this.messages = [...this.messages, msg]
-              .sort((a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
-              );
-
-            hasNewMessage = true;
-
-            // 🔔 trigger notification
-            // this.showNotification(msg);
-
-            // // 🔔 in-tab notification
-            // this.notifyInTab(msg);
-
-            // 🔥 increase unread counter
-            // if (msg.name !== this.name) {
-            //   this.unreadCount++;
-            // }
-
-            // start blinking
-            if (msg.name !== this.name) {
-              //   this.unreadCount++;
-              this.startTabBlink();
-            }
-
-
-          } else {
-            existing.image = msg.image;
-            // ONLY update if something changed
-            if (
-              existing.status !== msg.status ||
-              existing.read !== msg.read
-            ) {
-
-              existing.status = msg.status;
-              existing.read = msg.read;
-            }
-          }
-        });
-
-        // SORT
-        // this.messages.sort((a, b) =>
-        //   new Date(a.createdAt).getTime() -
-        //   new Date(b.createdAt).getTime()
-        // );
-
-        // SCROLL ONLY FOR NEW MESSAGE
-        if (hasNewMessage) {
-
-          setTimeout(() => {
-
-            this.scrollToBottom();
-
-          }, 50);
-        }
-
+        }, 50);
       });
+
+    this.socketService.readMessage(
+      this.roomId,
+      this.name
+    );
   }
 
-  // ---------------- SEND MESSAGE ----------------
+  /* =========================
+     SEND MESSAGE
+  ========================= */
+
   sendMessage() {
 
     if (
@@ -256,126 +492,68 @@ export class AppComponent {
       !this.selectedImage
     ) return;
 
-    // temporary local id
-    const tempId = 'tmp_' + Date.now();
+    const tempId =
+      'tmp_' + Date.now();
 
     const data = {
+
       tempId,
+
       roomId: this.roomId,
+
       name: this.name,
+
       message: this.message,
+
       image: this.selectedImage,
-      viewOnce: this.selectedImage ? true : false,
+
+      viewOnce:
+        this.selectedImage
+          ? true
+          : false,
+
       viewedBy: [],
+
       read: false,
+
       createdAt: new Date()
     };
 
-    // add instantly to UI
-    this.scrollToBottom();
+    // instant UI
+
     this.messages.push(data);
+
+    this.cdr.detectChanges();
+
+    this.scrollToBottom();
+
+    // socket send
+
+    this.socketService.sendMessage(data);
+
+    // clear input
+
     this.message = '';
-    
 
-    this.chatService.sendMessage(data)
-      .subscribe((savedMsg: any) => {
+    this.selectedImage = '';
 
-        // replace temp message with real backend message
-        const index = this.messages.findIndex(
-          m => m.tempId === tempId
-        );
-
-        // if (index !== -1) {
-        //   this.messages[index] = savedMsg;
-        // }
-
-        // if (index !== -1) {
-
-          const originalCreatedAt =
-            this.messages[index].createdAt;
-
-          Object.assign(this.messages[index], savedMsg);
-
-          // preserve original timestamp
-          this.messages[index].createdAt =
-            originalCreatedAt;
-
-          // Object.assign(this.messages[index], savedMsg);
-
-        // }
-
- this.scrollToBottom();
-        this.selectedImage = '';
-        this.previewImage = '';
-
-      });
+    this.previewImage = '';
+    // this.scrollToBottom();
   }
-  // sendMessage() {
 
-  //   if (
-  //     !this.message.trim() &&
-  //     !this.selectedImage
-  //   ) return;
-
-  //   const data = {
-  //     roomId: this.roomId,
-  //     name: this.name,
-  //     message: this.message,
-  //     image: this.selectedImage,
-  //     // IMAGE ALWAYS VIEW ONCE
-  //     viewOnce:
-  //       this.selectedImage ? true : false,
-
-  //     viewedBy: [],
-  //     read: false
-  //   };
-
-  //   this.messages.push(data);
-
-  //   this.chatService.sendMessage(data)
-  //     .subscribe(() => {
-
-  //       this.message = '';
-
-  //       this.selectedImage = '';
-  //       this.previewImage = '';
-  //       // this.loadMessages();
-  //       this.scrollToBottom();
-  //     });
-  // }
-
-  // onImageSelected(event: any) {
-
-  //   const file = event.target.files[0];
-
-  //   if (!file) return;
-
-  //   // only image
-  //   if (!file.type.startsWith('image/')) {
-  //     alert('Please select image only');
-  //     return;
-  //   }
-
-  //   const reader = new FileReader();
-
-  //   reader.onload = () => {
-
-  //     this.selectedImage = reader.result as string;
-
-  //     this.previewImage = this.selectedImage;
-  //   };
-
-  //   reader.readAsDataURL(file);
-  // }
-
+  /* =========================
+     IMAGE SELECT
+  ========================= */
 
   onImageSelected(event: any) {
 
-    const file = event.target.files[0];
+    const file =
+      event.target.files[0];
 
     if (!file) return;
 
-    const reader = new FileReader();
+    const reader =
+      new FileReader();
 
     reader.onload = (e: any) => {
 
@@ -385,15 +563,16 @@ export class AppComponent {
 
       img.onload = () => {
 
-        // create canvas
-        const canvas = document.createElement('canvas');
+        const canvas =
+          document.createElement('canvas');
 
-        // resize
         const MAX_WIDTH = 600;
+
         const scale =
           MAX_WIDTH / img.width;
 
         canvas.width = MAX_WIDTH;
+
         canvas.height =
           img.height * scale;
 
@@ -402,7 +581,6 @@ export class AppComponent {
 
         if (!ctx) return;
 
-        // draw resized image
         ctx.drawImage(
           img,
           0,
@@ -411,146 +589,210 @@ export class AppComponent {
           canvas.height
         );
 
-        // compress image
         const compressed =
           canvas.toDataURL(
             'image/jpeg',
-            0.5 // quality 0-1
+            0.5
           );
 
-        // save
         this.selectedImage = compressed;
-        this.previewImage = compressed;
 
-        console.log(
-          'Compressed size:',
-          compressed.length
-        );
+        this.previewImage = compressed;
       };
     };
 
     reader.readAsDataURL(file);
   }
 
-  // ---------------- SCROLL ----------------
-  // scrollToBottom() {
-  //   try {
-  //     const el = document.querySelector('.messages');
-  //     if (el) {
-  //       el.scrollTop = el.scrollHeight;
-  //     }
-  //   } catch { }
-  // }
+  /* =========================
+     REMOVE IMAGE
+  ========================= */
+
+  removeSelectedImage() {
+
+    this.selectedImage = '';
+
+    this.previewImage = '';
+  }
+
+  /* =========================
+     VIEW ONCE
+  ========================= */
+
+  openViewOnce(msg: any) {
+
+    if (
+      msg.viewedBy?.includes(this.name)
+    ) return;
+
+    this.selectedDialogImage =
+      msg.image;
+
+    this.selectedDialogMsg =
+      msg;
+
+    this.showImageDialog = true;
+
+    this.socketService.viewOnce(
+      msg._id,
+      this.name
+    );
+  }
+
+  closeDialog() {
+
+    this.showImageDialog = false;
+
+    this.selectedDialogImage = '';
+
+    this.selectedDialogMsg = null;
+  }
+
+  /* =========================
+     HEARTBEAT
+  ========================= */
 
   startHeartbeat() {
 
     setInterval(() => {
 
-      this.chatService.heartbeat(this.name)
-        .subscribe();
+      this.socketService
+        .heartbeat(this.name);
 
-    }, 5000); // every 5 seconds
-  }
-  // loadOnlineUsers(user: any) {
-
-  //   this.chatService.getOnlineUsers(user)
-  //     .subscribe((users: any) => {
-  //       this.onlineUsers = users;
-
-  //       if(this.onlineUsers.status){
-
-  //       this.status ='Online'
-  //       }else{
-  //         this.status ='Offline'
-  //       }
-  //     });
-  // }
-
-  loadOnlineUsers(user: any) {
-
-    this.chatService.getOnlineUsers(user)
-      .subscribe((response: any) => {
-
-        console.log(response);
-
-        if (response.status) {
-          this.status = 'Online';
-        } else {
-          this.status = 'Offline';
-        }
-
-      });
+    }, 5000);
   }
 
+  /* =========================
+     SCROLL
+  ========================= */
 
-  ngOnInit() {
-
-    const savedName = localStorage.getItem('chat_name');
-    const savedRoom = localStorage.getItem('chat_roomId');
-
-    if (savedName) {
-      this.name = savedName;
-      this.joined = true;
-    }
-
-    if (savedRoom) {
-      this.roomId = savedRoom;
-      this.roomCreated = true;
-
-      this.loadMessages();
-
-      this.interval = setInterval(() => {
-        this.loadMessages();
-      }, 1500);
-    }
-
-    window.addEventListener('focus', () => {
-      this.stopTabBlink();
-      //Update last online
-      console.log("go here");
-      this.chatService.heartbeat(this.name);
-    });
-  }
-  logout() {
-    localStorage.removeItem('chat_name');
-    localStorage.removeItem('chat_roomId');
-
-    this.name = '';
-    this.roomId = '';
-    this.joined = false;
-    this.roomCreated = false;
-    this.messages.length = 0;
-    this.messages = [];
-
-    clearInterval(this.interval);
-  }
-
-  onRoomIdInput() {
-    this.roomId = this.roomId.replace(/[^0-9]/g, '');
-  }
-
-  // ---------------- AUTO SCROLL ----------------
   scrollToBottom(): void {
 
     try {
 
-      this.scrollContainer.nativeElement.scrollTo({
+      this.scrollContainer
+        .nativeElement
+        .scrollTo({
 
-        top:
-          this.scrollContainer.nativeElement.scrollHeight,
+          top:
+            this.scrollContainer
+              .nativeElement
+              .scrollHeight,
 
-        behavior: 'smooth'
-      });
+          behavior: 'smooth'
+        });
 
     } catch (err) { }
   }
 
-  // ---------------- CHECK IF USER NEAR BOTTOM ----------------
+  /* =========================
+     NOTIFICATION
+  ========================= */
+
+  showNotification(msg: any) {
+
+    if (
+      Notification.permission
+      !== 'granted'
+    ) return;
+
+    if (msg.name === this.name)
+      return;
+
+    new Notification(
+      `💬 ${msg.name}`,
+      {
+        body:
+          msg.message ||
+          'Sent an image',
+
+        icon:
+          'assets/chat-icon.png'
+      }
+    );
+  }
+
+  notifyInTab(msg: any) {
+
+    if (msg.name === this.name)
+      return;
+
+    this.notifText =
+      `${msg.name}: ${msg.message || 'Sent an image'}`;
+
+    this.showInAppNotif = true;
+
+    setTimeout(() => {
+
+      this.showInAppNotif = false;
+
+    }, 3000);
+  }
+
+  /* =========================
+     TAB BLINK
+  ========================= */
+
+  startTabBlink() {
+
+    if (this.blinkInterval)
+      return;
+
+    this.blinkInterval =
+      setInterval(() => {
+
+        if (!document.hidden)
+          return;
+
+        this.blinkToggle =
+          !this.blinkToggle;
+
+        document.title =
+          this.blinkToggle
+            ? '🔴 New Message'
+            : '💬 Chat App';
+
+      }, 1000);
+  }
+
+  stopTabBlink() {
+
+    clearInterval(
+      this.blinkInterval
+    );
+
+    this.blinkInterval = null;
+
+    this.unreadCount = 0;
+
+    document.title =
+      this.originalTitle;
+  }
+
+  /* =========================
+     ROOM INPUT
+  ========================= */
+
+  onRoomIdInput() {
+
+    this.roomId =
+      this.roomId.replace(
+        /[^0-9]/g,
+        ''
+      );
+  }
+
+  /* =========================
+     CHECK BOTTOM
+  ========================= */
+
   isNearBottom(): boolean {
 
     try {
 
-      const el = this.scrollContainer.nativeElement;
+      const el =
+        this.scrollContainer
+          .nativeElement;
 
       return (
         el.scrollHeight -
@@ -565,142 +807,56 @@ export class AppComponent {
     }
   }
 
-  removeSelectedImage() {
+  /* =========================
+     LOGOUT
+  ========================= */
 
-    this.selectedImage = '';
-    this.previewImage = '';
-  }
+  logout() {
 
-  // openViewOnce(msg: any) {
+    localStorage.removeItem(
+      'chat_name'
+    );
 
-  //   console.log('CLICKED IMAGE', msg);
+    localStorage.removeItem(
+      'chat_roomId'
+    );
 
-  //   if (!msg?.image) {
-  //     console.log('NO IMAGE FOUND');
-  //     return;
-  //   }
+    this.name = '';
 
-  //   if (msg.viewedBy?.includes(this.name)) {
-  //     console.log('ALREADY VIEWED');
-  //     return;
-  //   }
-
-  //   // OPEN IMAGE FIRST (IMPORTANT)
-  //   const win = window.open();
-
-  //   if (win) {
-  //     win.document.write(`
-  //     <img src="${msg.image}" style="width:100%" />
-  //   `);
-  //   } else {
-  //     alert('Popup blocked');
-  //   }
-
-  //   // THEN MARK VIEWED
-  //   this.chatService
-  //     .markViewOnce(msg._id, this.name)
-  //     .subscribe(() => {
-
-  //       if (!msg.viewedBy) msg.viewedBy = [];
-
-  //       msg.viewedBy.push(this.name);
-
-  //       console.log('MARKED AS VIEWED');
-  //     });
-  // }
-  openViewOnce(msg: any) {
-
-    if (msg.viewedBy?.includes(this.name)) return;
-
-    this.selectedDialogImage = msg.image;
-    this.selectedDialogMsg = msg;
-    this.showImageDialog = true;
-
-    // mark as viewed
-    this.chatService
-      .markViewOnce(msg._id, this.name)
-      .subscribe(() => {
-
-        if (!msg.viewedBy) msg.viewedBy = [];
-        msg.viewedBy.push(this.name);
-      });
-  }
-  closeDialog() {
-    this.showImageDialog = false;
-    this.selectedDialogImage = '';
-    this.selectedDialogMsg = null;
-  }
-
-  showNotification(msg: any) {
-
-    if (Notification.permission !== 'granted') return;
-
-    // don't notify own messages
-    if (msg.name === this.name) return;
-
-    new Notification(`💬 ${msg.name}`, {
-
-      body: msg.message || 'Sent an image',
-
-      icon: 'assets/chat-icon.png' // optional
-    });
-  }
-
-  notifyInTab(msg: any) {
-
-    if (msg.name === this.name) return;
-
-    this.notifText =
-      `${msg.name}: ${msg.message || 'Sent an image'}`;
-
-    this.showInAppNotif = true;
-
-    // auto hide after 3s
-    setTimeout(() => {
-      this.showInAppNotif = false;
-    }, 3000);
-  }
-
-  startTabBlink() {
-
-    // prevent multiple intervals
-    if (this.blinkInterval) return;
-
-    this.blinkInterval = setInterval(() => {
-
-      if (!document.hidden) return;
-
-      this.blinkToggle = !this.blinkToggle;
-
-      document.title = this.blinkToggle
-        // ? `🔴 New Message (${this.unreadCount})`
-        // : `💬 Chat App (${this.unreadCount})`;
-        ? `🔴 New Message`
-        : `💬 Chat App`;
-
-    }, 1000);
-  }
-
-  stopTabBlink() {
-
-    clearInterval(this.blinkInterval);
-    this.blinkInterval = null;
-
-    this.unreadCount = 0;
-    document.title = this.originalTitle;
-  }
-
-  trackByMessage(index: number, msg: any): string {
-
-    return msg._id || msg.tempId;
-
-  }
-  back() {
-    this.roomCreated = false;
     this.roomId = '';
-    this.messages.length = 0;
+
+    this.joined = false;
+
+    this.roomCreated = false;
+
     this.messages = [];
   }
 
+  /* =========================
+     BACK
+  ========================= */
 
+  back() {
+
+    this.roomCreated = false;
+
+    this.roomId = '';
+
+    this.messages = [];
+  }
+
+  /* =========================
+     TRACK BY
+  ========================= */
+
+  trackByMessage(
+    index: number,
+    msg: any
+  ): string {
+
+    return (
+      msg._id ||
+      msg.tempId
+    );
+  }
 }
